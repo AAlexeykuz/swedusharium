@@ -1,5 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
+from numpy.ma.extras import average
+
 from cogwheels.neurosphere import Neurosphere
 import logging
 
@@ -136,9 +138,11 @@ if __name__ == "__main__":
 
     sphere.generate_tectonics()
     sphere.generate_heights()
-    sphere.generate_precipitation_map()
-    colors = sphere.generate_colors_by_map(pon_map)
-
+    sphere.generate_heat_map()
+    print(average(list(sphere.heat_map.values())))
+    # sphere.generate_precipitation_map()
+    # print(average(list(sphere.precipitation_map.values())))
+    colors = sphere.generate_colors_by_map(sphere.heat_map)
     fig, ax = plot_sphere_points(points, colors)
     plt.show()
 

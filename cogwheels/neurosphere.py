@@ -1,13 +1,15 @@
 import colorsys
 import json
+import logging
 import random
 import time
-import logging
+
 import disnake
 import noise
 import numpy as np
 from disnake.ext import commands
 from sklearn.neighbors import BallTree
+
 from constants import GUILD_IDS
 
 
@@ -73,8 +75,8 @@ class Neurosphere:
         self.tectonic_bearing_noise_coefficients = [4, 3, 2]
         self.tectonics = dict()
         # высоты:
-        self.min_height = -10
-        self.max_height = 10
+        self.min_height = -100
+        self.max_height = 100
         self.water_percentage = 71
         self.tectonic_conflict_coefficient = 0.15
         self.oceanic_plates_ratio = self.water_percentage / 100
@@ -86,24 +88,24 @@ class Neurosphere:
         self.mountain_width = 0.12
         self.height_map = dict()
         # температура:
-        self.min_temp = 0
+        self.min_temp = -100
         self.max_temp = 100
-        self.min_heat_normalization = 0
-        self.max_heat_normalization = 0.375
+        self.min_heat_noise = -0.65
+        self.max_heat_noise = 0
         self.heat_tilt_angle = 0.0
         self.heat_rotation_angle = 0.0
-        self.altitude_heat_k = 0.05
+        self.altitude_heat_k = 0.005
         self.heat_noise_octaves = [2, 4, 8, 16]
         self.heat_noise_coefficients = [1, 0.5, 0.25, 0.125]
         self.heat_map = dict()
         # осадки
         self.min_precipitation = 0
         self.max_precipitation = 100
-        self.min_precipitation_normalization = 0
-        self.max_precipitation_normalization = 0.75
+        self.min_precipitation_noise = -0.4
+        self.max_precipitation_noise = 0.4
         self.precipitation_tilt_angle = 0.0
         self.precipitation_rotation_angle = 0.0
-        self.altitude_precipitation_k = 0.05
+        self.altitude_precipitation_k = 0.005
         self.precipitation_noise_octaves = [2, 4, 8, 16]
         self.precipitation_noise_coefficients = [1, 0.5, 0.25, 0.125]
         self.precipitation_map = dict()
@@ -126,10 +128,13 @@ class Neurosphere:
 
     # ======= Методы генерации =======
 
+    def generate_biomes(self):
+        pass
+
     def generate_heat_map(self):
         # генерируем шум
         noise_map = self.generate_perlin_noise(self.heat_noise_octaves, self.heat_noise_coefficients)
-        noise_map = self.normalize_map_by_min_max(noise_map, self.min_heat_normalization, self.max_heat_normalization)
+        noise_map = self.normalize_map_by_min_max(noise_map, self.min_heat_noise, self.max_heat_noise)
         for point in self.points:
             # вычисление температуры от -1 до 1 по косинусу + смещение от чатагпт
             point_key = tuple(point.tolist())
@@ -148,14 +153,14 @@ class Neurosphere:
             height = self.height_map[point_key]
             if height > 0:
                 self.heat_map[point_key] -= height * self.altitude_heat_k
-        return self.normalize_map_by_min_max(self.heat_map, self.min_temp, self.max_temp)
+        self.heat_map = self.normalize_map_by_min_max(self.heat_map, self.min_temp, self.max_temp)
 
     def generate_precipitation_map(self):
         # генерируем шум
         noise_map = self.generate_perlin_noise(self.precipitation_noise_octaves, self.precipitation_noise_coefficients)
         noise_map = self.normalize_map_by_min_max(noise_map,
-                                                  self.min_precipitation_normalization,
-                                                  self.max_precipitation_normalization)
+                                                  self.min_precipitation_noise,
+                                                  self.max_precipitation_noise)
 
         for point in self.points:
             # вычисление осадков от -1 до 1 по косинусу ((4x + пи)/2) в квадрате + смещение от чатагпт
@@ -175,7 +180,9 @@ class Neurosphere:
             height = self.height_map[point_key]
             if height > 0:
                 self.precipitation_map[point_key] -= height * self.altitude_precipitation_k
-        return self.normalize_map_by_min_max(self.precipitation_map, self.min_precipitation, self.max_precipitation)
+        self.precipitation_map = self.normalize_map_by_min_max(self.precipitation_map,
+                                                               self.min_precipitation,
+                                                               self.max_precipitation)
 
     def generate_heights(self):
         start_time = time.time()
@@ -475,7 +482,7 @@ class Neurosphere:
 
         new_points = np.array([Neurosphere.cartesian_to_spherical(v) for v in coords])
         return new_points
-    
+
     @staticmethod
     def haversine_distance(lat1, lon1, lat2, lon2):
         dlat = lat2 - lat1
