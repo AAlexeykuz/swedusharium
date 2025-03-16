@@ -50,6 +50,7 @@ class Neurosphere:
         # seed = 5757
         # seed = 4709
         # seed = 7940
+        seed = 5622
         random.seed(seed)
         logging.info(f"Seed: {seed}")
         self.radius = data["radius"]
@@ -67,15 +68,15 @@ class Neurosphere:
         # ======= Параметры генерации =======
         # тектоника:
         self.big_tectonics_number = 7
-        self.small_tectonics_number = 7
+        self.small_tectonics_number = 8
         self.small_tectonics_delta = 0.35,  # расстояние между плитами, где могут генерироваться малые плиты в радианах
         self.small_tectonics_max_distance = 0.25,  # максимальный радиус малых плит в радианах
         # self.tectonic_distance_noise_octaves = [10]
         # self.tectonic_distance_noise_coefficients = [2 / np.sqrt(3) * 8]
         self.tectonic_distance_noise_octaves = [3, 10, 20, 45]
         self.tectonic_distance_noise_coefficients = [1, 0.5, 0.25, 0.125]
-        self.tectonic_bearing_noise_octaves = [2, 4, 6]
-        self.tectonic_bearing_noise_coefficients = [4, 3, 2]
+        self.tectonic_bearing_noise_octaves = [3, 10, 20, 45]
+        self.tectonic_bearing_noise_coefficients = [1, 0.5, 0.25, 0.125]
         self.tectonics = dict()
         # высоты:
         self.min_height = -100
@@ -83,14 +84,14 @@ class Neurosphere:
         self.water_percentage = 71
         self.water_level = None
         self.tectonic_conflict_coefficient = 0.15
-        self.max_tectonic_speed = 0.2
+        self.max_tectonic_speed = 0.4
         self.oceanic_plate_height_delta = -0.2
         self.continental_plate_height_delta = 0.2
-        self.oceanic_plates_ratio = 0.5
+        self.oceanic_plates_ratio = self.water_percentage / 100
         self.height_noise_octaves = [3, 10, 20, 45]
-        self.height_noise_coefficients = [1, 0.75, 0.5, 0.25]
+        self.height_noise_coefficients = [1, 0.5, 0.25, 0.125]
         self.mountain_width = 0.12
-        self.mountain_percentage = 3
+        self.mountain_percentage = 2
         self.mountain_height = None
         self.height_map = dict()
         # температура:
@@ -292,7 +293,6 @@ Polar	Polar	Tundra	Tundra	Taiga	Plains	Plains	Plains	Plains	Plains	Desert	Desert
         self.height_map = self.normalize_map_by_min_max(self.height_map, self.min_height, self.max_height)
         self.water_level = np.percentile(np.array(list(self.height_map.values())), self.water_percentage)
         self.mountain_height = np.percentile(np.array(list(self.height_map.values())), 100 - self.mountain_percentage)
-        print(self.mountain_height)
 
         logging.info(f"Генерация карты высот: {time.time() - start_time:.2f}с")
 
@@ -473,12 +473,12 @@ Polar	Polar	Tundra	Tundra	Taiga	Plains	Plains	Plains	Plains	Plains	Desert	Desert
 
     def generate_biome(self, height, temperature, precipitation):
         if height < self.water_level:
-            if temperature < -40:
+            if temperature < -20:
                 return "Glacier"
             else:
                 return "Marine"
         elif height > self.mountain_height:
-            if temperature < -40:
+            if temperature < -20:
                 return "Snowy mountain"
             else:
                 return "Mountain"
