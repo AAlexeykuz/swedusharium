@@ -3,13 +3,11 @@ import json
 import logging
 import random
 import time
-
 import disnake
 import noise
 import numpy as np
 from disnake.ext import commands
 from sklearn.neighbors import BallTree
-
 from constants import GUILD_IDS
 
 
@@ -33,11 +31,11 @@ class Item:
 
 
 class Location:
-    def __init__(self, data):
-        self.data = data
+    def __init__(self):
+        self.biome = None
 
-    def add_character_id(self, char_id):
-        self.data["characters_id"].append(char_id)
+    def set_biome(self, biome):
+        self.biome = biome
 
 
 class Neurosphere:
@@ -49,6 +47,9 @@ class Neurosphere:
         # seed = 5950
         # seed = 29
         # seed = 3484
+        # seed = 5757
+        # seed = 4709
+        # seed = 7940
         random.seed(seed)
         logging.info(f"Seed: {seed}")
         self.radius = data["radius"]
@@ -69,8 +70,10 @@ class Neurosphere:
         self.small_tectonics_number = 7
         self.small_tectonics_delta = 0.35,  # расстояние между плитами, где могут генерироваться малые плиты в радианах
         self.small_tectonics_max_distance = 0.25,  # максимальный радиус малых плит в радианах
-        self.distance_noise_octaves = [10]
-        self.distance_noise_coefficients = [2 / np.sqrt(3) * 8]
+        # self.tectonic_distance_noise_octaves = [10]
+        # self.tectonic_distance_noise_coefficients = [2 / np.sqrt(3) * 8]
+        self.tectonic_distance_noise_octaves = [3, 10, 20, 45]
+        self.tectonic_distance_noise_coefficients = [1, 0.5, 0.25, 0.125]
         self.tectonic_bearing_noise_octaves = [2, 4, 6]
         self.tectonic_bearing_noise_coefficients = [4, 3, 2]
         self.tectonics = dict()
@@ -78,23 +81,26 @@ class Neurosphere:
         self.min_height = -100
         self.max_height = 100
         self.water_percentage = 71
+        self.water_level = None
         self.tectonic_conflict_coefficient = 0.15
-        self.oceanic_plates_ratio = self.water_percentage / 100
-        self.max_tectonic_speed = 0.4
-        self.oceanic_plate_height_delta = -0.15
-        self.continental_plate_height_delta = 0.15
-        self.height_noise_octaves = [3, 10, 20, 30]
-        self.height_noise_coefficients = coefficients = [1, 0.5, 0.25, 0.125]
+        self.max_tectonic_speed = 0.2
+        self.oceanic_plate_height_delta = -0.2
+        self.continental_plate_height_delta = 0.2
+        self.oceanic_plates_ratio = 0.5
+        self.height_noise_octaves = [3, 10, 20, 45]
+        self.height_noise_coefficients = [1, 0.75, 0.5, 0.25]
         self.mountain_width = 0.12
+        self.mountain_percentage = 3
+        self.mountain_height = None
         self.height_map = dict()
         # температура:
-        self.min_temp = -100
-        self.max_temp = 100
-        self.min_heat_noise = -0.65
-        self.max_heat_noise = 0
+        self.min_temp = -125
+        self.max_temp = 125
+        self.min_heat_noise = -0.25
+        self.max_heat_noise = 0.25
         self.heat_tilt_angle = 0.0
         self.heat_rotation_angle = 0.0
-        self.altitude_heat_k = 0.005
+        self.altitude_heat_k = 0.0025
         self.heat_noise_octaves = [2, 4, 8, 16]
         self.heat_noise_coefficients = [1, 0.5, 0.25, 0.125]
         self.heat_map = dict()
@@ -109,11 +115,20 @@ class Neurosphere:
         self.precipitation_noise_octaves = [2, 4, 8, 16]
         self.precipitation_noise_coefficients = [1, 0.5, 0.25, 0.125]
         self.precipitation_map = dict()
-
-        self.load_data(data)
-
+        # биомы
+        biomes_string = """Polar	Polar	Tundra	Tundra	Taiga	Taiga	Taiga	Temperate rainforest	Temperate rainforest	Temperate rainforest	Temperate rainforest	Swamp	Swamp	Swamp	Swamp	Swamp	Tropical rainforest	Tropical rainforest	Tropical rainforest	Tropical rainforest
+Polar	Polar	Tundra	Tundra	Taiga	Taiga	Taiga	Temperate rainforest	Temperate rainforest	Temperate rainforest	Temperate rainforest	Temperate rainforest	Temperate rainforest	Swamp	Swamp	Swamp	Tropical rainforest	Tropical rainforest	Tropical rainforest	Tropical rainforest
+Polar	Polar	Tundra	Tundra	Taiga	Taiga	Taiga	Temperate rainforest	Temperate rainforest	Temperate rainforest	Temperate rainforest	Temperate rainforest	Temperate rainforest	Temperate rainforest	Temperate rainforest	Seasonal forest	Savanna	Savanna	Savanna	Savanna
+Polar	Polar	Tundra	Tundra	Taiga	Taiga	Taiga	Seasonal forest	Seasonal forest	Seasonal forest	Seasonal forest	Seasonal forest	Seasonal forest	Seasonal forest	Seasonal forest	Seasonal forest	Savanna	Savanna	Savanna	Savanna
+Polar	Polar	Tundra	Tundra	Taiga	Taiga	Taiga	Seasonal forest	Seasonal forest	Seasonal forest	Seasonal forest	Seasonal forest	Seasonal forest	Seasonal forest	Seasonal forest	Seasonal forest	Savanna	Savanna	Savanna	Tropical desert
+Polar	Polar	Tundra	Tundra	Taiga	Taiga	Taiga	Seasonal forest	Seasonal forest	Seasonal forest	Seasonal forest	Seasonal forest	Seasonal forest	Seasonal forest	Shrubland	Shrubland	Savanna	Savanna	Savanna	Tropical desert
+Polar	Polar	Tundra	Tundra	Taiga	Taiga	Taiga	Seasonal forest	Seasonal forest	Plains	Plains	Shrubland	Shrubland	Shrubland	Shrubland	Shrubland	Savanna	Savanna	Tropical desert	Tropical desert
+Polar	Polar	Tundra	Tundra	Taiga	Taiga	Taiga	Plains	Plains	Plains	Plains	Shrubland	Shrubland	Shrubland	Shrubland	Shrubland	Savanna	Tropical desert	Tropical desert	Tropical desert
+Polar	Polar	Tundra	Tundra	Taiga	Plains	Plains	Plains	Plains	Plains	Desert	Desert	Desert	Desert	Desert	Desert	Tropical desert	Tropical desert	Tropical desert	Tropical desert
+Polar	Polar	Tundra	Tundra	Taiga	Plains	Plains	Plains	Plains	Plains	Desert	Desert	Desert	Desert	Desert	Desert	Tropical desert	Tropical desert	Tropical desert	Tropical desert"""
+        self.biomes_table = self.table(biomes_string)
+        # self.load_data(data)
         self.borders = []
-        self.generate_colors = self.generate_colors_by_map
 
     def load_data(self, data):
         if data["generate"]:
@@ -126,12 +141,25 @@ class Neurosphere:
                 point = self.find_nearest_point(*point)
                 self.locations[tuple(point.tolist())] = Location(location)
 
+    def statistics(self):
+        ground_temperatures = []
+        for point in self.points:
+            point_key = tuple(point.tolist())
+            height = self.height_map[point_key]
+            if height > self.water_level:
+                ground_temperatures.append(self.heat_map[point_key])
+        logging.info(f"Средняя температура: {np.average(list(self.heat_map.values()))}")
+        logging.info(f"Средняя температура на суше: {np.average(ground_temperatures)}")
+
     # ======= Методы генерации =======
 
-    def generate_biomes(self):
-        pass
+    @staticmethod
+    def table(biome_string):
+        table = [line.split("\t") for line in biome_string.split("\n")]
+        return table
 
     def generate_heat_map(self):
+        start_time = time.time()
         # генерируем шум
         noise_map = self.generate_perlin_noise(self.heat_noise_octaves, self.heat_noise_coefficients)
         noise_map = self.normalize_map_by_min_max(noise_map, self.min_heat_noise, self.max_heat_noise)
@@ -146,16 +174,19 @@ class Neurosphere:
             z1 = z
             z2 = np.sin(self.heat_tilt_angle) * y1 + np.cos(self.heat_tilt_angle) * z1
             effective_lat = np.arcsin(z2)
-            self.heat_map[point_key] = np.cos(effective_lat)
+            self.heat_map[point_key] = np.cos(effective_lat) - 3
             # добавляем шум
             self.heat_map[point_key] += noise_map[point_key]
             # зависимость от высоты
             height = self.height_map[point_key]
-            if height > 0:
-                self.heat_map[point_key] -= height * self.altitude_heat_k
+            if height > self.water_level:
+                self.heat_map[point_key] -= (height - self.water_level) * self.altitude_heat_k
         self.heat_map = self.normalize_map_by_min_max(self.heat_map, self.min_temp, self.max_temp)
 
+        logging.info(f"Генерация карты тепла: {time.time() - start_time:.2f}с")
+
     def generate_precipitation_map(self):
+        start_time = time.time()
         # генерируем шум
         noise_map = self.generate_perlin_noise(self.precipitation_noise_octaves, self.precipitation_noise_coefficients)
         noise_map = self.normalize_map_by_min_max(noise_map,
@@ -178,11 +209,13 @@ class Neurosphere:
             self.precipitation_map[point_key] += noise_map[point_key]
             # зависимость от высоты
             height = self.height_map[point_key]
-            if height > 0:
-                self.precipitation_map[point_key] -= height * self.altitude_precipitation_k
+            if height > self.water_level:
+                self.precipitation_map[point_key] += (height - self.water_level) * self.altitude_precipitation_k
         self.precipitation_map = self.normalize_map_by_min_max(self.precipitation_map,
                                                                self.min_precipitation,
                                                                self.max_precipitation)
+
+        logging.info(f"Генерация карты осадков: {time.time() - start_time:.2f}с")
 
     def generate_heights(self):
         start_time = time.time()
@@ -257,6 +290,9 @@ class Neurosphere:
         #         self.borders.append(point_key)
 
         self.height_map = self.normalize_map_by_min_max(self.height_map, self.min_height, self.max_height)
+        self.water_level = np.percentile(np.array(list(self.height_map.values())), self.water_percentage)
+        self.mountain_height = np.percentile(np.array(list(self.height_map.values())), 100 - self.mountain_percentage)
+        print(self.mountain_height)
 
         logging.info(f"Генерация карты высот: {time.time() - start_time:.2f}с")
 
@@ -266,8 +302,8 @@ class Neurosphere:
         # Создаём словарь, в котором на каждую точку будет храниться точка после обработки шума
         noise_point_keys = dict()
         noise_map_distance = self.generate_perlin_noise(
-            self.distance_noise_octaves,
-            self.distance_noise_coefficients
+            self.tectonic_distance_noise_octaves,
+            self.tectonic_distance_noise_coefficients
         )
         noise_map_bearing = self.generate_perlin_noise(
             self.tectonic_bearing_noise_octaves,
@@ -382,11 +418,50 @@ class Neurosphere:
             colors[point_key] = color
         return colors
 
+    def generate_colors_by_biomes(self):
+        biome_hsv = {
+            "marine": (210, 90, 70),
+            "desert": (37, 80, 90),
+            "savanna": (65, 85, 80),
+            "polar": (190, 0, 95),
+            "tundra": (200, 50, 85),
+            "taiga": (150, 70, 60),
+            "plains": (85, 75, 75),
+            "seasonal forest": (100, 80, 70),
+            "temperate rainforest": (120, 90, 80),
+            "swamp": (100, 60, 60),
+            "shrubland": (70, 65, 65),
+            "tropical desert": (45, 85, 90),
+            "tropical rainforest": (140, 95, 85),
+            "glacier": (190, 5, 95),
+            "mountain": (0, 0, 75),
+            "snowy mountain": (0, 0, 95),
+        }
+        biome_colors = {
+            None: (255, 255, 255),        }
+        colors = dict()
+        for point_key in self.locations:
+            location = self.locations[point_key]
+            biome = location.biome.lower()
+            if biome not in biome_hsv:
+                colors[point_key] = biome_colors[biome]
+                continue
+            hue, saturation, value = biome_hsv[biome]
+            r, g, b = colorsys.hsv_to_rgb(hue / 360, saturation / 100, value / 100)
+            color = int(r * 255), int(g * 255), int(b * 255)
+            colors[point_key] = color
+        return colors
+
     def generate_locations(self, *_):
         for point in self.points:
-            with open("neurosphere/samples/null_location.json", "r", encoding="utf-8") as f:
-                data = json.load(f)
-            self.locations[tuple(point.tolist())] = Location(data)
+            point_key =tuple(point.tolist())
+            location = Location()
+            height = self.height_map[point_key]
+            temperature = self.heat_map[point_key]
+            precipitation = self.precipitation_map[point_key]
+            biome = self.generate_biome(height, temperature, precipitation)
+            location.set_biome(biome)
+            self.locations[point_key] = location
 
         # main_characters = data["main_characters"]
         # for character in main_characters:
@@ -396,7 +471,35 @@ class Neurosphere:
         #         point = self.find_nearest_point(*point)
         #         self.locations[tuple(point.tolist())].add_character_id(character["id"])
 
+    def generate_biome(self, height, temperature, precipitation):
+        if height < self.water_level:
+            if temperature < -40:
+                return "Glacier"
+            else:
+                return "Marine"
+        elif height > self.mountain_height:
+            if temperature < -40:
+                return "Snowy mountain"
+            else:
+                return "Mountain"
+        horizontal_index = int((temperature + 100) // 10)
+        if horizontal_index >= 20:
+            horizontal_index = 19
+        elif horizontal_index < 0:
+            horizontal_index = 0
+        vertical_index = int(precipitation // 10)
+        if vertical_index >= 10:
+            vertical_index = 9
+        elif vertical_index < 0:
+            vertical_index = 0
+        return self.biomes_table[vertical_index][horizontal_index]
+
     # ======= Математические методы =======
+
+    @staticmethod
+    def get_value_by_interval(key, bounds, values):
+        indices = np.searchsorted(bounds, key, side="right") - 1
+        return values[indices]
 
     @staticmethod
     def calculate_vector_conflict(a, b, c, d):
