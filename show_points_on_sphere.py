@@ -134,18 +134,17 @@ if __name__ == "__main__":
     sphere = Neurosphere()
     points = sphere.points
 
-    # tectonics, tectonics_number = sphere.generate_tectonics()
-    # noise_map = sphere.generate_heights(tectonics, tectonics_number)
-    # colors = sphere.generate_colors_by_height_map(noise_map)
-
-    # tectonics, tectonic_colors, _ = sphere.generate_tectonics()
-    # colors = sphere.generate_colors_by_tectonic(tectonics, tectonic_colors)
-    # fig, ax = plot_sphere_points(points, colors)
-    # plt.show()
-
-    heat_map = sphere.generate_heat_map()
-    colors = sphere.generate_colors_by_map(heat_map)
+    sphere.generate_tectonics()
+    sphere.generate_heights()
+    sphere.generate_precipitation_map()
+    colors = sphere.generate_colors_by_map(pon_map)
 
     fig, ax = plot_sphere_points(points, colors)
     plt.show()
+
+    # precipitation = sphere.generate_precipitation_map(np.deg2rad(0), np.deg2rad(0))
+    # colors = sphere.generate_colors_by_map(precipitation)
+    #
+    # fig, ax = plot_sphere_points(points, colors)
+    # plt.show()
 

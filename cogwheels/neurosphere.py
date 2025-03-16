@@ -61,6 +61,53 @@ class Neurosphere:
         self.items = dict()
         self.structures = dict()
 
+        # ======= Параметры генерации =======
+        # тектоника:
+        self.big_tectonics_number = 7
+        self.small_tectonics_number = 7
+        self.small_tectonics_delta = 0.35,  # расстояние между плитами, где могут генерироваться малые плиты в радианах
+        self.small_tectonics_max_distance = 0.25,  # максимальный радиус малых плит в радианах
+        self.distance_noise_octaves = [10]
+        self.distance_noise_coefficients = [2 / np.sqrt(3) * 8]
+        self.tectonic_bearing_noise_octaves = [2, 4, 6]
+        self.tectonic_bearing_noise_coefficients = [4, 3, 2]
+        self.tectonics = dict()
+        # высоты:
+        self.min_height = -10
+        self.max_height = 10
+        self.water_percentage = 71
+        self.tectonic_conflict_coefficient = 0.15
+        self.oceanic_plates_ratio = self.water_percentage / 100
+        self.max_tectonic_speed = 0.4
+        self.oceanic_plate_height_delta = -0.15
+        self.continental_plate_height_delta = 0.15
+        self.height_noise_octaves = [3, 10, 20, 30]
+        self.height_noise_coefficients = coefficients = [1, 0.5, 0.25, 0.125]
+        self.mountain_width = 0.12
+        self.height_map = dict()
+        # температура:
+        self.min_temp = 0
+        self.max_temp = 100
+        self.min_heat_normalization = 0
+        self.max_heat_normalization = 0.375
+        self.heat_tilt_angle = 0.0
+        self.heat_rotation_angle = 0.0
+        self.altitude_heat_k = 0.05
+        self.heat_noise_octaves = [2, 4, 8, 16]
+        self.heat_noise_coefficients = [1, 0.5, 0.25, 0.125]
+        self.heat_map = dict()
+        # осадки
+        self.min_precipitation = 0
+        self.max_precipitation = 100
+        self.min_precipitation_normalization = 0
+        self.max_precipitation_normalization = 0.75
+        self.precipitation_tilt_angle = 0.0
+        self.precipitation_rotation_angle = 0.0
+        self.altitude_precipitation_k = 0.05
+        self.precipitation_noise_octaves = [2, 4, 8, 16]
+        self.precipitation_noise_coefficients = [1, 0.5, 0.25, 0.125]
+        self.precipitation_map = dict()
+
         self.load_data(data)
 
         self.borders = []
@@ -80,24 +127,61 @@ class Neurosphere:
     # ======= Методы генерации =======
 
     def generate_heat_map(self):
-        heat_map = dict()
+        # генерируем шум
+        noise_map = self.generate_perlin_noise(self.heat_noise_octaves, self.heat_noise_coefficients)
+        noise_map = self.normalize_map_by_min_max(noise_map, self.min_heat_normalization, self.max_heat_normalization)
         for point in self.points:
+            # вычисление температуры от -1 до 1 по косинусу + смещение от чатагпт
             point_key = tuple(point.tolist())
-            latitude, _ = point
-            heat_map[point_key] = np.cos(latitude)
-        min_temp = -40
-        max_temp = 40
-        return self.normalize_map_by_min_max(heat_map, min_temp, max_temp)
+            lat, lon = point
+            x = np.cos(lat) * np.cos(lon)
+            y = np.cos(lat) * np.sin(lon)
+            z = np.sin(lat)
+            y1 = np.sin(self.heat_rotation_angle) * x + np.cos(self.heat_rotation_angle) * y
+            z1 = z
+            z2 = np.sin(self.heat_tilt_angle) * y1 + np.cos(self.heat_tilt_angle) * z1
+            effective_lat = np.arcsin(z2)
+            self.heat_map[point_key] = np.cos(effective_lat)
+            # добавляем шум
+            self.heat_map[point_key] += noise_map[point_key]
+            # зависимость от высоты
+            height = self.height_map[point_key]
+            if height > 0:
+                self.heat_map[point_key] -= height * self.altitude_heat_k
+        return self.normalize_map_by_min_max(self.heat_map, self.min_temp, self.max_temp)
 
-    def generate_heights(self, tectonics, tectonics_number):
+    def generate_precipitation_map(self):
+        # генерируем шум
+        noise_map = self.generate_perlin_noise(self.precipitation_noise_octaves, self.precipitation_noise_coefficients)
+        noise_map = self.normalize_map_by_min_max(noise_map,
+                                                  self.min_precipitation_normalization,
+                                                  self.max_precipitation_normalization)
+
+        for point in self.points:
+            # вычисление осадков от -1 до 1 по косинусу ((4x + пи)/2) в квадрате + смещение от чатагпт
+            point_key = tuple(point.tolist())
+            lat, lon = point
+            x = np.cos(lat) * np.cos(lon)
+            y = np.cos(lat) * np.sin(lon)
+            z = np.sin(lat)
+            y1 = np.sin(self.precipitation_rotation_angle) * x + np.cos(self.precipitation_rotation_angle) * y
+            z1 = z
+            z2 = np.sin(self.precipitation_tilt_angle) * y1 + np.cos(self.precipitation_tilt_angle) * z1
+            effective_lat = np.arcsin(z2)
+            self.precipitation_map[point_key] = np.cos((4 * effective_lat + np.pi) / 2) ** 2
+            # добавляем шум
+            self.precipitation_map[point_key] += noise_map[point_key]
+            # зависимость от высоты
+            height = self.height_map[point_key]
+            if height > 0:
+                self.precipitation_map[point_key] -= height * self.altitude_precipitation_k
+        return self.normalize_map_by_min_max(self.precipitation_map, self.min_precipitation, self.max_precipitation)
+
+    def generate_heights(self):
         start_time = time.time()
 
-        min_height = -10
-        max_height = 10
-        water_percentage = 71
-        tectonic_conflict_coefficient = 0.15
+        tectonics_number: int = self.big_tectonics_number + self.small_tectonics_number
 
-        height_map = dict()
         tectonic_shifts = [np.array([(random.random() - 0.5) * 2,
                                      (random.random() - 0.5) * 2,
                                      (random.random() - 0.5) * 2]) for _ in range(tectonics_number)]
@@ -106,41 +190,38 @@ class Neurosphere:
         # coefficients = [1, 0.5, 0.25, 0.125]
         # octaves = [3, 5, 10, 20]
         # coefficients = [1, 0.5, 0.25, 0.125]
-        octaves = [3, 10, 20, 30]
-        coefficients = [1, 0.5, 0.25, 0.125]
-        for point_key in tectonics:
-            index = tectonics[point_key]
+        for point_key in self.tectonics:
+            index = self.tectonics[point_key]
             x, y, z = self.spherical_to_cartesian(*point_key) + tectonic_shifts[index]
             noise_value = 0
-            for octave, k in zip(octaves, coefficients):
+            for octave, k in zip(self.height_noise_octaves, self.height_noise_coefficients):
                 noise_value += k * noise.pnoise3(x, y, z, octaves=octave)
-            height_map[point_key] = noise_value
+            self.height_map[point_key] = noise_value
 
         numbers = list(range(tectonics_number))
         random.shuffle(numbers)
-        ratio = round(len(numbers) * water_percentage / 100)
+        ratio = round(len(numbers) * self.oceanic_plates_ratio)
         oceanic_plates = numbers[:ratio]
 
-        max_tectonic_speed = 0.4
         tectonic_movement = [(random.random() * 2 * np.pi,
-                              random.random() * max_tectonic_speed) for _ in range(tectonics_number)]
+                              random.random() * self.max_tectonic_speed) for _ in range(tectonics_number)]
 
-        height_map = self.normalize_map(height_map, k=1, d=1)
+        self.height_map = self.normalize_map_by_min_max(self.height_map, 0, 1)
         for point in self.points:
             point_key = tuple(point.tolist())
-            tectonic_index = tectonics[point_key]
+            tectonic_index = self.tectonics[point_key]
             if tectonic_index in oceanic_plates:
-                height_map[point_key] -= 0.15
+                self.height_map[point_key] += self.oceanic_plate_height_delta
             else:
-                height_map[point_key] += 0.15
-            nearest_points = self.find_nearest_points_by_distance(*point, 3 / self.radius)
+                self.height_map[point_key] += self.continental_plate_height_delta
+            nearest_points = self.find_nearest_points_by_distance(*point, self.mountain_width)
             for point2 in nearest_points:
                 x1, y1 = point
                 x2, y2 = point2
                 if (x1, y1) == (x2, y2):
                     continue
                 point_key_2 = tuple(point2.tolist())
-                tectonic_index_2 = tectonics[point_key_2]
+                tectonic_index_2 = self.tectonics[point_key_2]
                 if tectonic_index == tectonic_index_2:
                     continue
                 # вычисляем конфликт векторов AB и CD
@@ -151,11 +232,11 @@ class Neurosphere:
                 vector2 = tectonic_movement[tectonic_index_2]
                 point_d = self.haversine_move(*point_c, *vector2)
                 conflict = self.calculate_vector_conflict(point_a, point_b, point_c, point_d)
-                height_map[point_key] += conflict * tectonic_conflict_coefficient
+                self.height_map[point_key] += conflict * self.tectonic_conflict_coefficient
 
         # for point in self.points:
         #     point_key = tuple(point.tolist())
-        #     tectonic_index = tectonics[point_key]
+        #     tectonic_index = self.tectonics[point_key]
         #     nearest_points = self.find_nearest_points_by_distance(*point, 1.15 / self.radius)
         #     for point2 in nearest_points:
         #         x1, y1 = point
@@ -163,37 +244,27 @@ class Neurosphere:
         #         if (x1, y1) == (x2, y2):
         #             continue
         #         point_key_2 = tuple(point2.tolist())
-        #         tectonic_index_2 = tectonics[point_key_2]
+        #         tectonic_index_2 = self.tectonics[point_key_2]
         #         if tectonic_index == tectonic_index_2:
         #             continue
         #         self.borders.append(point_key)
 
-        height_map = self.normalize_map_by_min_max(height_map, min_height, max_height)
+        self.height_map = self.normalize_map_by_min_max(self.height_map, self.min_height, self.max_height)
 
         logging.info(f"Генерация карты высот: {time.time() - start_time:.2f}с")
 
-        return height_map
-
-    def generate_tectonics(self, big_tectonics_number=7,
-                           small_tectonics_number=7,
-                           small_tectonics_delta=0.35,  # расстояние между плитами, где могут генерироваться малые
-                           # плиты, в радианах
-                           small_tectonics_max_distance=0.25,  # максимальный радиус малых плит, в радианах
-                           ):
+    def generate_tectonics(self):
         start_time = time.time()
-
-        # Главный output
-        tectonics = dict()
 
         # Создаём словарь, в котором на каждую точку будет храниться точка после обработки шума
         noise_point_keys = dict()
         noise_map_distance = self.generate_perlin_noise(
-            [10],
-            [2 / np.sqrt(3) * 8]
+            self.distance_noise_octaves,
+            self.distance_noise_coefficients
         )
         noise_map_bearing = self.generate_perlin_noise(
-            [2, 4, 6],
-            [4, 3, 2]
+            self.tectonic_bearing_noise_octaves,
+            self.tectonic_bearing_noise_coefficients
         )
         for point in self.points:
             point_key = tuple(point.tolist())
@@ -202,7 +273,7 @@ class Neurosphere:
             noise_point_keys[point_key] = (self.haversine_move(*point, noise_bearing, noise_distance))
 
         # Вычисляем равноудалённые точки для больших плит
-        random_points = np.array(random.choices(self.points, k=big_tectonics_number))
+        random_points = np.array(random.choices(self.points, k=self.big_tectonics_number))
         big_tectonics_points = self.relaxate_points(random_points)
         big_tectonics_tree = BallTree(big_tectonics_points, metric='haversine')
         # Подготавливаем список точек, которые не будут использованы
@@ -217,12 +288,12 @@ class Neurosphere:
             index = indices[0]
             # если разница между расстояниями до плит слишком маленькая, то оставляем на потом для генерации малых
             distance_delta = abs(dist[0] - dist[1])
-            if distance_delta < small_tectonics_delta:
+            if distance_delta < self.small_tectonics_delta:
                 small_plate_generation_points.append(point)
             else:
-                tectonics[point_key] = index
+                self.tectonics[point_key] = index
 
-        small_tectonics_points = np.array(random.choices(small_plate_generation_points, k=small_tectonics_number))
+        small_tectonics_points = np.array(random.choices(small_plate_generation_points, k=self.small_tectonics_number))
         small_tectonics_tree = BallTree(small_tectonics_points, metric='haversine')
 
         for point in small_plate_generation_points:
@@ -230,13 +301,12 @@ class Neurosphere:
             query_point = [noise_point_keys[point_key]]
             dist, indices = small_tectonics_tree.query(query_point, k=1)
             dist, indices = dist[0], indices[0]
-            dist, index = dist[0], indices[0] + big_tectonics_number
+            dist, index = dist[0], indices[0] + self.big_tectonics_number
             # если расстояние слишком большое, чтобы поместиться в малую плиту, ищем ближайшую большую
-            if dist > small_tectonics_max_distance:
+            if dist > self.small_tectonics_max_distance:
                 index = big_tectonics_tree.query(query_point, k=1, return_distance=False)[0][0]
-            tectonics[point_key] = index
+            self.tectonics[point_key] = index
         logging.info(f"Генерация тектонических плит: {time.time() - start_time:.2f}с")
-        return tectonics, big_tectonics_number + small_tectonics_number
 
     @staticmethod
     def generate_perlin_noise_static(points, octaves: list[float], coefficients: list[float], positive=False):
@@ -264,7 +334,7 @@ class Neurosphere:
 
     def generate_colors_by_map(self, point_map):
         colors = dict()
-        point_map = self.normalize_map(point_map, k=1, d=1)
+        point_map = self.normalize_map_by_min_max(point_map, 0, 1)
         for point in self.points:
             point_key = tuple(point.tolist())
             c = round((point_map[point_key] * 255))
@@ -273,7 +343,7 @@ class Neurosphere:
 
     def generate_colors_by_height_map(self, height_map):
         colors = dict()
-        height_map = self.normalize_map(height_map, k=1, d=1)
+        height_map = self.normalize_map_by_min_max(height_map, 0, 1)
         threshold = np.percentile(np.array(list(height_map.values())), self.water_percentage)
         for point in self.points:
             point_key = tuple(point.tolist())
