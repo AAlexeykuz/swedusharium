@@ -1,0 +1,70 @@
+{
+  "radius": 25,
+  "locations": [],
+  "main_characters": [
+    {
+      "id": "char_1",
+      "description": "A curious wanderer with a gentle demeanor named John Doe, known by many names but never quite revealing his true self.",
+      "lat": 0,
+      "lon": 0,
+      "health": {
+        "limbs": {
+          "head": 100,
+          "torso": 100,
+          "left_arm": 100,
+          "right_arm": 100,
+          "left_leg": 100,
+          "right_leg": 100
+        }
+      },
+      "stats": {
+        "energy": 100,
+        "hunger": 100
+      },
+      "mental": {
+        "feelings": "Calm and introspective, with a hint of underlying sorrow.",
+        "interests": [
+          "Exploring ancient ruins",
+          "Studying local legends",
+          "Improving swordsmanship"
+        ],
+        "big_goals": [
+          "Contemplates the mysteries of the world."
+        ],
+        "goals": [
+          "Explore unknown lands and help those in need."
+        ],
+        "small_goals": [
+          "Find shelter for the night"
+        ]
+      },
+      "memories": [
+      ],
+      "knowledge": [
+      ],
+      "spacial_memories": [
+      ],
+      "relationships": {
+        "char_2": "A trusted companion who shares his love for adventure.",
+        "char_3": "A fierce rival whose challenges push him to improve."
+      },
+      "skills": {
+        "social": 50,
+        "melee": 50,
+        "logic": 60
+      },
+      "clothes": {
+        "head": null,
+        "upper_body": null,
+        "lower_body": null,
+        "feet": null
+      },
+      "inventory": [
+      ],
+      "message_history": [
+      ]
+    }
+  ],
+  "generate": true,
+  "generation": {}
+}

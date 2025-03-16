@@ -1,0 +1,488 @@
+import colorsys
+import json
+import random
+import time
+import logging
+import disnake
+import noise
+import numpy as np
+from disnake.ext import commands
+from sklearn.neighbors import BallTree
+from constants import GUILD_IDS
+
+
+class Character:
+    def __init__(self, data):
+        self.data = data
+        # todo добавить current_action персонажу
+
+
+def generate_pleasant_color():
+    hue = random.uniform(0, 360)  # Full hue spectrum
+    saturation = random.uniform(0.25, 0.45)  # Avoid very pale or overly intense colors
+    brightness = random.uniform(0.5, 0.85)  # Keep colors from being too dark or too bright
+    r, g, b = colorsys.hsv_to_rgb(hue / 360, saturation, brightness)
+    return int(r * 255), int(g * 255), int(b * 255)
+
+
+class Item:
+    def __init__(self):
+        pass
+
+
+class Location:
+    def __init__(self, data):
+        self.data = data
+
+    def add_character_id(self, char_id):
+        self.data["characters_id"].append(char_id)
+
+
+class Neurosphere:
+    def __init__(self, file_path="neurosphere/saves/new.json"):
+        with open(file_path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        seed = random.randint(0, 10000)
+        # seed = 603  # архипелаг
+        # seed = 5950
+        # seed = 29
+        # seed = 3484
+        random.seed(seed)
+        logging.info(f"Seed: {seed}")
+        self.radius = data["radius"]
+        self.time = 0
+
+        self.points: np.array = self.generate_sphere_points()
+        self.tree = BallTree(self.points, metric='haversine')
+
+        self.locations = dict()
+        self.characters = dict()
+        self.life = dict()
+        self.items = dict()
+        self.structures = dict()
+
+        self.load_data(data)
+
+        self.borders = []
+        self.generate_colors = self.generate_colors_by_map
+
+    def load_data(self, data):
+        if data["generate"]:
+            generation = data["generation"]
+            self.generate_locations(generation)
+        else:
+            locations = data["locations"]
+            for location in locations:
+                point = location["lat"], location["lon"]
+                point = self.find_nearest_point(*point)
+                self.locations[tuple(point.tolist())] = Location(location)
+
+    # ======= Методы генерации =======
+
+    def generate_heat_map(self):
+        heat_map = dict()
+        for point in self.points:
+            point_key = tuple(point.tolist())
+            latitude, _ = point
+            heat_map[point_key] = np.cos(latitude)
+        min_temp = -40
+        max_temp = 40
+        return self.normalize_map_by_min_max(heat_map, min_temp, max_temp)
+
+    def generate_heights(self, tectonics, tectonics_number):
+        start_time = time.time()
+
+        min_height = -10
+        max_height = 10
+        water_percentage = 71
+        tectonic_conflict_coefficient = 0.15
+
+        height_map = dict()
+        tectonic_shifts = [np.array([(random.random() - 0.5) * 2,
+                                     (random.random() - 0.5) * 2,
+                                     (random.random() - 0.5) * 2]) for _ in range(tectonics_number)]
+
+        # octaves = [2, 8, 16, 24]
+        # coefficients = [1, 0.5, 0.25, 0.125]
+        # octaves = [3, 5, 10, 20]
+        # coefficients = [1, 0.5, 0.25, 0.125]
+        octaves = [3, 10, 20, 30]
+        coefficients = [1, 0.5, 0.25, 0.125]
+        for point_key in tectonics:
+            index = tectonics[point_key]
+            x, y, z = self.spherical_to_cartesian(*point_key) + tectonic_shifts[index]
+            noise_value = 0
+            for octave, k in zip(octaves, coefficients):
+                noise_value += k * noise.pnoise3(x, y, z, octaves=octave)
+            height_map[point_key] = noise_value
+
+        numbers = list(range(tectonics_number))
+        random.shuffle(numbers)
+        ratio = round(len(numbers) * water_percentage / 100)
+        oceanic_plates = numbers[:ratio]
+
+        max_tectonic_speed = 0.4
+        tectonic_movement = [(random.random() * 2 * np.pi,
+                              random.random() * max_tectonic_speed) for _ in range(tectonics_number)]
+
+        height_map = self.normalize_map(height_map, k=1, d=1)
+        for point in self.points:
+            point_key = tuple(point.tolist())
+            tectonic_index = tectonics[point_key]
+            if tectonic_index in oceanic_plates:
+                height_map[point_key] -= 0.15
+            else:
+                height_map[point_key] += 0.15
+            nearest_points = self.find_nearest_points_by_distance(*point, 3 / self.radius)
+            for point2 in nearest_points:
+                x1, y1 = point
+                x2, y2 = point2
+                if (x1, y1) == (x2, y2):
+                    continue
+                point_key_2 = tuple(point2.tolist())
+                tectonic_index_2 = tectonics[point_key_2]
+                if tectonic_index == tectonic_index_2:
+                    continue
+                # вычисляем конфликт векторов AB и CD
+                point_a = point_key
+                vector1 = tectonic_movement[tectonic_index]
+                point_b = self.haversine_move(*point_a, *vector1)
+                point_c = point_key_2
+                vector2 = tectonic_movement[tectonic_index_2]
+                point_d = self.haversine_move(*point_c, *vector2)
+                conflict = self.calculate_vector_conflict(point_a, point_b, point_c, point_d)
+                height_map[point_key] += conflict * tectonic_conflict_coefficient
+
+        # for point in self.points:
+        #     point_key = tuple(point.tolist())
+        #     tectonic_index = tectonics[point_key]
+        #     nearest_points = self.find_nearest_points_by_distance(*point, 1.15 / self.radius)
+        #     for point2 in nearest_points:
+        #         x1, y1 = point
+        #         x2, y2 = point2
+        #         if (x1, y1) == (x2, y2):
+        #             continue
+        #         point_key_2 = tuple(point2.tolist())
+        #         tectonic_index_2 = tectonics[point_key_2]
+        #         if tectonic_index == tectonic_index_2:
+        #             continue
+        #         self.borders.append(point_key)
+
+        height_map = self.normalize_map_by_min_max(height_map, min_height, max_height)
+
+        logging.info(f"Генерация карты высот: {time.time() - start_time:.2f}с")
+
+        return height_map
+
+    def generate_tectonics(self, big_tectonics_number=7,
+                           small_tectonics_number=7,
+                           small_tectonics_delta=0.35,  # расстояние между плитами, где могут генерироваться малые
+                           # плиты, в радианах
+                           small_tectonics_max_distance=0.25,  # максимальный радиус малых плит, в радианах
+                           ):
+        start_time = time.time()
+
+        # Главный output
+        tectonics = dict()
+
+        # Создаём словарь, в котором на каждую точку будет храниться точка после обработки шума
+        noise_point_keys = dict()
+        noise_map_distance = self.generate_perlin_noise(
+            [10],
+            [2 / np.sqrt(3) * 8]
+        )
+        noise_map_bearing = self.generate_perlin_noise(
+            [2, 4, 6],
+            [4, 3, 2]
+        )
+        for point in self.points:
+            point_key = tuple(point.tolist())
+            noise_distance = noise_map_distance[point_key] / self.radius
+            noise_bearing = noise_map_bearing[point_key]
+            noise_point_keys[point_key] = (self.haversine_move(*point, noise_bearing, noise_distance))
+
+        # Вычисляем равноудалённые точки для больших плит
+        random_points = np.array(random.choices(self.points, k=big_tectonics_number))
+        big_tectonics_points = self.relaxate_points(random_points)
+        big_tectonics_tree = BallTree(big_tectonics_points, metric='haversine')
+        # Подготавливаем список точек, которые не будут использованы
+        small_plate_generation_points = []
+
+        for point in self.points:
+            point_key = tuple(point.tolist())
+            query_point = [noise_point_keys[point_key]]
+            # находим dist - расстояния от точки с шумом до двух ближайших плит и index - номер ближайшей плиты
+            dist, indices = big_tectonics_tree.query(query_point, k=2)
+            dist, indices = dist[0], indices[0]
+            index = indices[0]
+            # если разница между расстояниями до плит слишком маленькая, то оставляем на потом для генерации малых
+            distance_delta = abs(dist[0] - dist[1])
+            if distance_delta < small_tectonics_delta:
+                small_plate_generation_points.append(point)
+            else:
+                tectonics[point_key] = index
+
+        small_tectonics_points = np.array(random.choices(small_plate_generation_points, k=small_tectonics_number))
+        small_tectonics_tree = BallTree(small_tectonics_points, metric='haversine')
+
+        for point in small_plate_generation_points:
+            point_key = tuple(point.tolist())
+            query_point = [noise_point_keys[point_key]]
+            dist, indices = small_tectonics_tree.query(query_point, k=1)
+            dist, indices = dist[0], indices[0]
+            dist, index = dist[0], indices[0] + big_tectonics_number
+            # если расстояние слишком большое, чтобы поместиться в малую плиту, ищем ближайшую большую
+            if dist > small_tectonics_max_distance:
+                index = big_tectonics_tree.query(query_point, k=1, return_distance=False)[0][0]
+            tectonics[point_key] = index
+        logging.info(f"Генерация тектонических плит: {time.time() - start_time:.2f}с")
+        return tectonics, big_tectonics_number + small_tectonics_number
+
+    @staticmethod
+    def generate_perlin_noise_static(points, octaves: list[float], coefficients: list[float], positive=False):
+        noise_map = {}
+
+        for point in points:
+            lat, lon = point
+            x, y, z = Neurosphere.spherical_to_cartesian(lat, lon)
+
+            noise_value = 0
+
+            for octave, k in zip(octaves, coefficients):
+                if positive:
+                    noise_value += k * (noise.pnoise3(x, y, z, octaves=octave) + np.sqrt(3) / 2)
+                else:
+                    noise_value += k * noise.pnoise3(x, y, z, octaves=octave)
+
+            point_key = tuple(point.tolist())
+            noise_map[point_key] = noise_value
+
+        return noise_map
+
+    def generate_perlin_noise(self, octaves: list[float], coefficients: list[float], positive=False):
+        return self.generate_perlin_noise_static(self.points, octaves, coefficients, positive)
+
+    def generate_colors_by_map(self, point_map):
+        colors = dict()
+        point_map = self.normalize_map(point_map, k=1, d=1)
+        for point in self.points:
+            point_key = tuple(point.tolist())
+            c = round((point_map[point_key] * 255))
+            colors[point_key] = (c, c, c)
+        return colors
+
+    def generate_colors_by_height_map(self, height_map):
+        colors = dict()
+        height_map = self.normalize_map(height_map, k=1, d=1)
+        threshold = np.percentile(np.array(list(height_map.values())), self.water_percentage)
+        for point in self.points:
+            point_key = tuple(point.tolist())
+            height = height_map[point_key]
+            if height > threshold:
+                color = (height * 255,
+                         height * 255,
+                         height * 255
+                         )
+            else:
+                color = (0, 0, 230)
+            if point_key in self.borders:
+                color = (color[0] / 2, color[1] / 2, color[2] / 2)
+            colors[point_key] = color
+        return colors
+
+    def generate_colors_by_tectonic(self, tectonics, tectonic_colors):
+        colors = dict()
+        for point in self.points:
+            point_key = tuple(point.tolist())
+            if point_key in tectonics:
+                index = tectonics[point_key]
+                color = tectonic_colors[index]
+                if index >= 8:
+                    r, g, b = color
+                    color = (r // 2), (g // 2), (b // 2)
+            else:
+                color = (0, 0, 0)
+            colors[point_key] = color
+        return colors
+
+    def generate_locations(self, *_):
+        for point in self.points:
+            with open("neurosphere/samples/null_location.json", "r", encoding="utf-8") as f:
+                data = json.load(f)
+            self.locations[tuple(point.tolist())] = Location(data)
+
+        # main_characters = data["main_characters"]
+        # for character in main_characters:
+        #     self.main_characters[character["id"]] = Character(character)
+        #     if data["generate"]:
+        #         point = character["lat"], character["lon"]
+        #         point = self.find_nearest_point(*point)
+        #         self.locations[tuple(point.tolist())].add_character_id(character["id"])
+
+    # ======= Математические методы =======
+
+    @staticmethod
+    def calculate_vector_conflict(a, b, c, d):
+        d_ab = Neurosphere.haversine_distance(a[0], a[1], b[0], b[1])
+        d_ac = Neurosphere.haversine_distance(a[0], a[1], c[0], c[1])
+        d_bc = Neurosphere.haversine_distance(b[0], b[1], c[0], c[1])
+
+        denom_a = np.sin(d_ac) * np.sin(d_ab)
+        if abs(denom_a) < 1e-10:
+            angle_a = 0.0
+        else:
+            val_a = (np.cos(d_bc) - np.cos(d_ac) * np.cos(d_ab)) / denom_a
+            val_a = max(min(val_a, 1), -1)
+            angle_a = np.acos(val_a)
+
+        d_cd = Neurosphere.haversine_distance(c[0], c[1], d[0], d[1])
+        d_ad = Neurosphere.haversine_distance(a[0], a[1], d[0], d[1])
+
+        denom_c = np.sin(d_ac) * np.sin(d_cd)
+        if abs(denom_c) < 1e-10:
+            angle_c = 0.0
+        else:
+            val_c = (np.cos(d_ad) - np.cos(d_ac) * np.cos(d_cd)) / denom_c
+            val_c = max(min(val_c, 1), -1)
+            angle_c = np.acos(val_c)
+
+        return np.cos(angle_a) * d_ab + np.cos(angle_c) * d_cd
+
+    @staticmethod
+    def normalize_map_by_min_max(point_map, min_value: float, max_value: float):
+        k = max_value - min_value
+        d = (min_value + max_value) / k
+        return Neurosphere.normalize_map(point_map, k, d)
+
+    @staticmethod
+    def normalize_map(point_map, k: float = 0, d: float = 0):
+        new_point_map = dict()
+        min_value = min(point_map.values())
+        for i in point_map:
+            new_point_map[i] = point_map[i] - min_value
+        max_value = max(new_point_map.values())
+        if k:
+            for i in point_map:
+                new_point_map[i] *= k / max_value
+        for i in point_map:
+            new_point_map[i] += k / 2 * (d - 1)
+        return new_point_map
+
+    @staticmethod
+    def spherical_to_cartesian(lat, lon):
+        """Convert spherical coordinates (lat, lon in radians) to Cartesian (x, y, z)."""
+        x = np.cos(lat) * np.cos(lon)
+        y = np.cos(lat) * np.sin(lon)
+        z = np.sin(lat)
+        return np.array([x, y, z])
+
+    @staticmethod
+    def cartesian_to_spherical(vec):
+        """Convert a normalized Cartesian vector (x, y, z) to spherical (lat, lon in radians)."""
+        x, y, z = vec
+        lat = np.arcsin(z)
+        lon = np.arctan2(y, x)
+        return lat, lon
+
+    @staticmethod
+    def relaxate_points(points, iterations=100, step_size=0.01, min_dist=1e-6):
+        n = points.shape[0]
+        # Convert all points to Cartesian coordinates
+        coords = np.array([Neurosphere.spherical_to_cartesian(lat, lon) for lat, lon in points])
+
+        # Iteratively adjust points by repulsion forces
+        for _ in range(iterations):
+            forces = np.zeros_like(coords)
+            # Compute repulsive forces between all pairs of points
+            for i in range(n):
+                for j in range(n):
+                    if i != j:
+                        diff = coords[i] - coords[j]
+                        dist = np.linalg.norm(diff) + min_dist
+                        forces[i] += diff / (dist ** 3)
+            coords = coords + step_size * forces
+            coords = np.array([v / np.linalg.norm(v) for v in coords])
+
+        new_points = np.array([Neurosphere.cartesian_to_spherical(v) for v in coords])
+        return new_points
+    
+    @staticmethod
+    def haversine_distance(lat1, lon1, lat2, lon2):
+        dlat = lat2 - lat1
+        dlon = lon2 - lon1
+        a = np.sin(dlat / 2) ** 2 + np.cos(lat1) * np.cos(lat2) * np.sin(dlon / 2) ** 2
+        c = 2 * np.arcsin(np.sqrt(a))
+        return c
+
+    @staticmethod
+    def haversine_move(latitude, longitude, bearing, distance):
+        d_by_r = distance
+        new_lat = np.arcsin(np.sin(latitude) * np.cos(d_by_r) +
+                            np.cos(latitude) * np.sin(d_by_r) * np.cos(bearing))
+        new_lon = longitude + np.arctan2(np.sin(bearing) * np.sin(d_by_r) * np.cos(latitude),
+                                         np.cos(d_by_r) - np.sin(latitude) * np.sin(new_lat))
+        return new_lat, new_lon
+
+    def generate_sphere_points(self):
+        """Генерирует n точек (вычисляется по площади сферы) на сфере и возвращает массив из широты и долготы"""
+        n = round(4 * np.pi * self.radius ** 2)
+        indices = np.arange(n, dtype=np.float32) + 0.5
+        phi = np.arccos(1 - 2 * indices / n)
+        theta = (np.pi * (1 + 5 ** 0.5)) * indices
+        latitude = (np.pi / 2 - phi)
+        longitude = theta % (2 * np.pi)
+
+        return np.column_stack((latitude, longitude))
+
+    def find_nearest_points_by_distance(self,
+                                        latitude,
+                                        longitude,
+                                        max_distance  # в радианах
+                                        ):
+        query_point = np.array([[latitude, longitude]])
+        indices = self.tree.query_radius(query_point, r=max_distance)[0]
+        return self.points[indices]
+
+    def move_and_find_next_point(self, latitude, longitude, bearing, distance):  # distance in radians
+        lat2, lon2 = self.haversine_move(latitude, longitude, bearing, distance)
+
+        query_point = [[lat2, lon2]]
+        dist, indices = self.tree.query(query_point, k=2)  # Get two closest points
+        if indices[0][0] == self.find_nearest_point_index(latitude, longitude):
+            return self.points[indices[0][1]]  # Return second closest if first is the original point
+        else:
+            return self.points[indices[0][0]]
+
+    @staticmethod
+    def find_nearest_points_index_static(latitude, longitude, tree: BallTree, k=1):
+        query_point = [[latitude, longitude]]
+        indices = tree.query(query_point, k=k, return_distance=False)[0]
+        return indices
+
+    def find_nearest_point_index(self, latitude, longitude):
+        return self.find_nearest_points_index_static(latitude, longitude, self.tree, k=1)[0]
+
+    def find_nearest_point(self, latitude, longitude):
+        return self.points[self.find_nearest_point_index(latitude, longitude)]
+
+
+class NeurosphereCog(commands.Cog):
+    def __init__(self, bot):
+        self.bot = bot
+        self.neurosphere = None
+
+    @commands.slash_command(name="neurosphere", description="Launches Neurosphere", guild_ids=GUILD_IDS)
+    async def launch_neurosphere(self, inter: disnake.ApplicationCommandInteraction):
+        await inter.response.defer()
+        self.neurosphere = Neurosphere()
+        await inter.followup.send("Нейросфера запущена.")
+
+    @commands.slash_command(name="spectate", description="Spectate character", guild_ids=GUILD_IDS)
+    async def spectate_character(self, inter: disnake.ApplicationCommandInteraction):
+        if self.neurosphere is None:
+            await inter.response.send_message("Нейросфера не запущена.", ephemeral=True)
+            return
+
+
+def setup(bot):
+    bot.add_cog(NeurosphereCog(bot))
