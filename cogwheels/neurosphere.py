@@ -50,6 +50,7 @@ class Neurosphere:
         # seed = 5757
         # seed = 4709
         # seed = 7940
+        # seed = 1489 r=25
         random.seed(seed)
         logging.info(f"Seed: {seed}")
         self.radius = data["radius"]
@@ -94,8 +95,8 @@ class Neurosphere:
         self.mountain_height = None
         self.height_map = dict()
         # температура:
-        self.min_temp = -125
-        self.max_temp = 125
+        self.min_temp = -175
+        self.max_temp = 130
         self.min_heat_noise = -0.25
         self.max_heat_noise = 0.25
         self.heat_tilt_angle = 0.0
@@ -116,15 +117,15 @@ class Neurosphere:
         self.precipitation_noise_coefficients = [1, 0.5, 0.25, 0.125]
         self.precipitation_map = dict()
         # биомы
-        biomes_string = """Polar	Polar	Tundra	Tundra	Taiga	Taiga	Taiga	Temperate rainforest	Temperate rainforest	Temperate rainforest	Temperate rainforest	Swamp	Swamp	Swamp	Swamp	Swamp	Tropical rainforest	Tropical rainforest	Tropical rainforest	Tropical rainforest
-Polar	Polar	Tundra	Tundra	Taiga	Taiga	Taiga	Temperate rainforest	Temperate rainforest	Temperate rainforest	Temperate rainforest	Temperate rainforest	Temperate rainforest	Swamp	Swamp	Swamp	Tropical rainforest	Tropical rainforest	Tropical rainforest	Tropical rainforest
-Polar	Polar	Tundra	Tundra	Taiga	Taiga	Taiga	Temperate rainforest	Temperate rainforest	Temperate rainforest	Temperate rainforest	Temperate rainforest	Temperate rainforest	Temperate rainforest	Temperate rainforest	Seasonal forest	Savanna	Savanna	Savanna	Savanna
-Polar	Polar	Tundra	Tundra	Taiga	Taiga	Taiga	Seasonal forest	Seasonal forest	Seasonal forest	Seasonal forest	Seasonal forest	Seasonal forest	Seasonal forest	Seasonal forest	Seasonal forest	Savanna	Savanna	Savanna	Savanna
-Polar	Polar	Tundra	Tundra	Taiga	Taiga	Taiga	Seasonal forest	Seasonal forest	Seasonal forest	Seasonal forest	Seasonal forest	Seasonal forest	Seasonal forest	Seasonal forest	Seasonal forest	Savanna	Savanna	Savanna	Tropical desert
-Polar	Polar	Tundra	Tundra	Taiga	Taiga	Taiga	Seasonal forest	Seasonal forest	Seasonal forest	Seasonal forest	Seasonal forest	Seasonal forest	Seasonal forest	Shrubland	Shrubland	Savanna	Savanna	Savanna	Tropical desert
-Polar	Polar	Tundra	Tundra	Taiga	Taiga	Taiga	Seasonal forest	Seasonal forest	Plains	Plains	Shrubland	Shrubland	Shrubland	Shrubland	Shrubland	Savanna	Savanna	Tropical desert	Tropical desert
-Polar	Polar	Tundra	Tundra	Taiga	Taiga	Taiga	Plains	Plains	Plains	Plains	Shrubland	Shrubland	Shrubland	Shrubland	Shrubland	Savanna	Tropical desert	Tropical desert	Tropical desert
-Polar	Polar	Tundra	Tundra	Taiga	Plains	Plains	Plains	Plains	Plains	Desert	Desert	Desert	Desert	Desert	Desert	Tropical desert	Tropical desert	Tropical desert	Tropical desert
+        biomes_string = """Polar	Polar	Tundra	Tundra	Taiga	Taiga	Temperate rainforest	Temperate rainforest	Temperate rainforest	Temperate rainforest	Temperate rainforest	Swamp	Swamp	Swamp	Swamp	Swamp	Tropical rainforest	Tropical rainforest	Tropical rainforest	Tropical rainforest
+Polar	Polar	Tundra	Tundra	Taiga	Taiga	Temperate rainforest	Temperate rainforest	Temperate rainforest	Temperate rainforest	Temperate rainforest	Seasonal forest	Seasonal forest	Seasonal forest	Seasonal forest	Seasonal forest	Tropical rainforest	Tropical rainforest	Tropical rainforest	Tropical rainforest
+Polar	Polar	Tundra	Tundra	Taiga	Taiga	Seasonal forest	Seasonal forest	Seasonal forest	Seasonal forest	Seasonal forest	Seasonal forest	Seasonal forest	Seasonal forest	Seasonal forest	Seasonal forest	Tropical seasonal forest	Tropical seasonal forest	Tropical seasonal forest	Tropical seasonal forest
+Polar	Polar	Tundra	Tundra	Taiga	Taiga	Seasonal forest	Seasonal forest	Seasonal forest	Seasonal forest	Seasonal forest	Seasonal forest	Seasonal forest	Seasonal forest	Seasonal forest	Shrubland	Tropical seasonal forest	Tropical seasonal forest	Tropical seasonal forest	Tropical seasonal forest
+Polar	Polar	Tundra	Tundra	Taiga	Taiga	Seasonal forest	Seasonal forest	Seasonal forest	Seasonal forest	Seasonal forest	Seasonal forest	Seasonal forest	Seasonal forest	Shrubland	Shrubland	Savanna	Savanna	Savanna	Savanna
+Polar	Polar	Tundra	Tundra	Taiga	Taiga	Seasonal forest	Seasonal forest	Seasonal forest	Seasonal forest	Seasonal forest	Seasonal forest	Seasonal forest	Shrubland	Shrubland	Shrubland	Savanna	Savanna	Savanna	Savanna
+Polar	Polar	Tundra	Tundra	Taiga	Taiga	Plains	Plains	Plains	Plains	Plains	Plains	Shrubland	Shrubland	Shrubland	Shrubland	Savanna	Savanna	Savanna	Tropical desert
+Polar	Polar	Tundra	Tundra	Taiga	Taiga	Plains	Plains	Plains	Plains	Plains	Plains	Shrubland	Shrubland	Shrubland	Shrubland	Savanna	Tropical desert	Tropical desert	Tropical desert
+Polar	Polar	Tundra	Tundra	Taiga	Plains	Plains	Plains	Plains	Plains	Plains	Desert	Desert	Desert	Desert	Desert	Tropical desert	Tropical desert	Tropical desert	Tropical desert
 Polar	Polar	Tundra	Tundra	Taiga	Plains	Plains	Plains	Plains	Plains	Desert	Desert	Desert	Desert	Desert	Desert	Tropical desert	Tropical desert	Tropical desert	Tropical desert"""
         self.biomes_table = self.table(biomes_string)
         # self.load_data(data)
@@ -431,7 +432,8 @@ Polar	Polar	Tundra	Tundra	Taiga	Plains	Plains	Plains	Plains	Plains	Desert	Desert
             "swamp": (100, 60, 60),
             "shrubland": (70, 65, 65),
             "tropical desert": (45, 85, 90),
-            "tropical rainforest": (140, 95, 85),
+            "tropical seasonal forest": (110, 85, 75),
+            "tropical rainforest": (140, 95, 60),
             "glacier": (190, 5, 95),
             "mountain": (0, 0, 75),
             "snowy mountain": (0, 0, 95),
@@ -472,12 +474,12 @@ Polar	Polar	Tundra	Tundra	Taiga	Plains	Plains	Plains	Plains	Plains	Desert	Desert
 
     def generate_biome(self, height, temperature, precipitation):
         if height < self.water_level:
-            if temperature < -20:
+            if temperature < -40:
                 return "Glacier"
             else:
                 return "Marine"
         elif height > self.mountain_height:
-            if temperature < -20:
+            if temperature < -30:
                 return "Snowy mountain"
             else:
                 return "Mountain"
