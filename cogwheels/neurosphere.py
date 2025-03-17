@@ -83,9 +83,9 @@ class Neurosphere:
         self.max_height = 100
         self.water_percentage = 71
         self.water_level = None
-        self.tectonic_conflict_coefficient = 0.15
+        self.tectonic_conflict_coefficient = 0.125
         self.oceanic_tectonic_conflict_coefficient = 0.05
-        self.max_tectonic_speed = 2
+        self.max_tectonic_speed = 1
         self.oceanic_plate_height_delta = -0.25
         self.continental_plate_height_delta = 0.25
         self.oceanic_plates_ratio = self.water_percentage / 100
@@ -96,14 +96,14 @@ class Neurosphere:
         self.mountain_height = None
         self.height_map = dict()
         # температура:
-        self.min_temp = -200
-        self.max_temp = 125
-        self.min_heat_noise = -0.1
-        self.max_heat_noise = 0.1
+        self.min_temp = -100
+        self.max_temp = 100
+        self.min_heat_noise = -0.000001
+        self.max_heat_noise = 0.0000001
         self.heat_delta = 0
         self.heat_tilt_angle = 0.0
         self.heat_rotation_angle = 0.0
-        self.altitude_heat_k = 0.01
+        self.altitude_heat_k = 0
         self.heat_noise_octaves = [2, 4, 8, 16]
         self.heat_noise_coefficients = [4, 3, 2, 1]
         self.heat_map = dict()
