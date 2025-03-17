@@ -87,8 +87,8 @@ class Neurosphere:
         self.water_percentage = 71
         self.water_level = None
         self.tectonic_conflict_coefficient = 0.15
-        self.oceanic_tectonic_conflict_coefficient = 0.1
-        self.max_tectonic_speed = 2.5
+        self.oceanic_tectonic_conflict_coefficient = 0.05
+        self.max_tectonic_speed = 2
         self.oceanic_plate_height_delta = -0.25
         self.continental_plate_height_delta = 0.25
         self.oceanic_plates_ratio = self.water_percentage / 100
