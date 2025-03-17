@@ -138,9 +138,6 @@ if __name__ == "__main__":
 
     sphere.generate_tectonics()
     sphere.generate_heights()
-    colors = sphere.generate_colors_by_height_map(sphere.height_map)
-    fig, ax = plot_sphere_points(points, colors)
-    plt.show()
     sphere.generate_heat_map()
     sphere.generate_precipitation_map()
     sphere.generate_locations()

@@ -3,11 +3,13 @@ import json
 import logging
 import random
 import time
+
 import disnake
 import noise
 import numpy as np
 from disnake.ext import commands
 from sklearn.neighbors import BallTree
+
 from constants import GUILD_IDS
 
 
@@ -85,7 +87,7 @@ class Neurosphere:
         self.water_level = None
         self.tectonic_conflict_coefficient = 0.125
         self.oceanic_tectonic_conflict_coefficient = 0.05
-        self.max_tectonic_speed = 1
+        self.max_tectonic_speed = 1.5
         self.oceanic_plate_height_delta = -0.25
         self.continental_plate_height_delta = 0.25
         self.oceanic_plates_ratio = self.water_percentage / 100
@@ -96,14 +98,14 @@ class Neurosphere:
         self.mountain_height = None
         self.height_map = dict()
         # температура:
-        self.min_temp = -100
-        self.max_temp = 100
-        self.min_heat_noise = -0.000001
-        self.max_heat_noise = 0.0000001
+        self.min_temp = -150
+        self.max_temp = 150
+        self.min_heat_noise = -0.25
+        self.max_heat_noise = 0.25
         self.heat_delta = 0
         self.heat_tilt_angle = 0.0
         self.heat_rotation_angle = 0.0
-        self.altitude_heat_k = 0
+        self.altitude_heat_k = 0.1
         self.heat_noise_octaves = [2, 4, 8, 16]
         self.heat_noise_coefficients = [4, 3, 2, 1]
         self.heat_map = dict()
@@ -112,24 +114,24 @@ class Neurosphere:
         self.max_precipitation = 100
         self.min_precipitation_noise = -0.5
         self.max_precipitation_noise = 0.5
-        self.precipitation_delta = 0
+        self.precipitation_delta = 0.25
         self.precipitation_tilt_angle = 0.0
         self.precipitation_rotation_angle = 0.0
-        self.altitude_precipitation_k = 0.01
-        self.precipitation_noise_octaves = [2, 4, 8, 16]
+        self.altitude_precipitation_k = 0.1
+        self.precipitation_noise_octaves = [3, 5, 4, 6]
         self.precipitation_noise_coefficients = [4, 3, 2, 1]
         self.precipitation_map = dict()
         # биомы
-        biomes_string = """Polar	Polar	Tundra	Tundra	Taiga	Taiga	Taiga	Swamp	Swamp	Swamp	Swamp	Temperate rainforest	Temperate rainforest	Temperate rainforest	Temperate rainforest	Tropical rainforest	Tropical rainforest	Tropical rainforest	Tropical rainforest	Tropical rainforest
-Polar	Tundra	Tundra	Tundra	Taiga	Taiga	Taiga	Swamp	Swamp	Swamp	Swamp	Temperate rainforest	Temperate rainforest	Temperate rainforest	Temperate rainforest	Tropical rainforest	Tropical rainforest	Tropical rainforest	Tropical rainforest	Tropical rainforest
-Polar	Tundra	Tundra	Taiga	Taiga	Taiga	Taiga	Seasonal forest	Seasonal forest	Seasonal forest	Seasonal forest	Seasonal forest	Seasonal forest	Seasonal forest	Seasonal forest	Tropical seasonal forest	Tropical seasonal forest	Tropical seasonal forest	Tropical seasonal forest	Tropical seasonal forest
-Polar	Tundra	Tundra	Taiga	Taiga	Taiga	Taiga	Seasonal forest	Seasonal forest	Seasonal forest	Seasonal forest	Seasonal forest	Seasonal forest	Seasonal forest	Seasonal forest	Tropical seasonal forest	Tropical seasonal forest	Tropical seasonal forest	Tropical seasonal forest	Tropical seasonal forest
-Polar	Tundra	Tundra	Taiga	Taiga	Taiga	Taiga	Seasonal forest	Seasonal forest	Seasonal forest	Seasonal forest	Plains	Plains	Plains	Plains	Savanna	Savanna	Savanna	Savanna	Savanna
-Polar	Tundra	Tundra	Taiga	Taiga	Taiga	Taiga	Seasonal forest	Seasonal forest	Seasonal forest	Seasonal forest	Plains	Plains	Plains	Plains	Savanna	Savanna	Savanna	Savanna	Savanna
-Polar	Tundra	Tundra	Taiga	Taiga	Taiga	Taiga	Plains	Plains	Plains	Plains	Steppe	Steppe	Steppe	Steppe	Savanna	Savanna	Savanna	Savanna	Savanna
-Polar	Tundra	Tundra	Taiga	Taiga	Taiga	Taiga	Plains	Plains	Plains	Plains	Steppe	Steppe	Steppe	Steppe	Savanna	Savanna	Savanna	Savanna	Desert
-Polar	Tundra	Tundra	Taiga	Taiga	Taiga	Taiga	Steppe	Steppe	Steppe	Steppe	Desert	Desert	Desert	Desert	Desert	Desert	Desert	Desert	Tropical desert
-Polar	Tundra	Tundra	Taiga	Taiga	Taiga	Taiga	Steppe	Steppe	Steppe	Steppe	Desert	Desert	Desert	Desert	Tropical desert	Tropical desert	Tropical desert	Tropical desert	Tropical desert"""
+        biomes_string = """Polar	Polar	Tundra	Tundra	Taiga	Taiga	Taiga	Taiga	Taiga	Temperate rainforest	Temperate rainforest	Temperate rainforest	Temperate rainforest	Swamp	Swamp	Swamp	Swamp	Tropical rainforest	Tropical rainforest	Tropical rainforest
+Polar	Polar	Tundra	Tundra	Taiga	Taiga	Taiga	Taiga	Temperate rainforest	Temperate rainforest	Temperate rainforest	Temperate rainforest	Temperate rainforest	Swamp	Swamp	Swamp	Tropical rainforest	Tropical rainforest	Tropical rainforest	Tropical rainforest
+Polar	Polar	Tundra	Tundra	Taiga	Taiga	Taiga	Taiga	Seasonal forest	Seasonal forest	Seasonal forest	Seasonal forest	Seasonal forest	Seasonal forest	Seasonal forest	Seasonal forest	Seasonal forest	Tropical seasonal forest	Tropical seasonal forest	Tropical seasonal forest
+Polar	Polar	Tundra	Tundra	Taiga	Taiga	Taiga	Taiga	Seasonal forest	Seasonal forest	Seasonal forest	Seasonal forest	Seasonal forest	Seasonal forest	Seasonal forest	Seasonal forest	Tropical seasonal forest	Tropical seasonal forest	Tropical seasonal forest	Tropical seasonal forest
+Polar	Polar	Tundra	Tundra	Taiga	Taiga	Taiga	Taiga	Seasonal forest	Seasonal forest	Seasonal forest	Seasonal forest	Seasonal forest	Seasonal forest	Seasonal forest	Seasonal forest	Seasonal forest	Savanna	Savanna	Savanna
+Polar	Polar	Tundra	Tundra	Taiga	Taiga	Taiga	Taiga	Seasonal forest	Seasonal forest	Seasonal forest	Seasonal forest	Plains	Plains	Plains	Plains	Savanna	Savanna	Savanna	Savanna
+Polar	Polar	Tundra	Tundra	Taiga	Taiga	Taiga	Taiga	Plains	Plains	Plains	Plains	Plains	Plains	Plains	Plains	Plains	Savanna	Savanna	Savanna
+Polar	Polar	Tundra	Tundra	Taiga	Taiga	Taiga	Taiga	Plains	Plains	Plains	Plains	Steppe	Steppe	Steppe	Steppe	Steppe	Steppe	Steppe	Desert
+Polar	Polar	Tundra	Tundra	Taiga	Taiga	Taiga	Taiga	Steppe	Steppe	Steppe	Steppe	Desert	Desert	Desert	Desert	Desert	Desert	Desert	Tropical desert
+Polar	Polar	Tundra	Tundra	Taiga	Taiga	Taiga	Steppe	Steppe	Steppe	Steppe	Steppe	Desert	Desert	Desert	Desert	Tropical desert	Tropical desert	Tropical desert	Tropical desert"""
         self.biomes_table = self.table(biomes_string)[::-1]
         # дебаг
         self.draw_tectonics = False
@@ -183,7 +185,9 @@ Polar	Tundra	Tundra	Taiga	Taiga	Taiga	Taiga	Steppe	Steppe	Steppe	Steppe	Desert	D
             self.heat_map[point_key] = np.cos(effective_lat) + self.heat_delta
             # добавляем шум
             self.heat_map[point_key] += noise_map[point_key]
-            # зависимость от высоты
+        self.heat_map = self.normalize_map_by_min_max(self.heat_map, self.min_temp, self.max_temp)
+        for point in self.points:
+            point_key = tuple(point.tolist())
             height = self.height_map[point_key]
             if height > self.water_level:
                 self.heat_map[point_key] -= (height - self.water_level) * self.altitude_heat_k
@@ -213,7 +217,12 @@ Polar	Tundra	Tundra	Taiga	Taiga	Taiga	Taiga	Steppe	Steppe	Steppe	Steppe	Desert	D
             self.precipitation_map[point_key] = np.cos((4 * effective_lat + np.pi) / 2) ** 2 + self.precipitation_delta
             # добавляем шум
             self.precipitation_map[point_key] += noise_map[point_key]
-            # зависимость от высоты
+        self.precipitation_map = self.normalize_map_by_min_max(self.precipitation_map,
+                                                               self.min_precipitation,
+                                                               self.max_precipitation)
+        # зависимость от высоты
+        for point in self.points:
+            point_key = tuple(point.tolist())
             height = self.height_map[point_key]
             if height > self.water_level:
                 self.precipitation_map[point_key] += (height - self.water_level) * self.altitude_precipitation_k
@@ -438,7 +447,7 @@ Polar	Tundra	Tundra	Taiga	Taiga	Taiga	Taiga	Steppe	Steppe	Steppe	Steppe	Desert	D
             "marine": (210, 90, 70),
             "desert": (45, 85, 90),
             "savanna": (65, 85, 80),
-            "polar": (190, 0, 95),
+            "polar": (190, 0, 100),
             "tundra": (200, 50, 85),
             "taiga": (150, 70, 60),
             "plains": (85, 75, 75),
@@ -449,12 +458,12 @@ Polar	Tundra	Tundra	Taiga	Taiga	Taiga	Taiga	Steppe	Steppe	Steppe	Steppe	Desert	D
             "tropical desert": (37, 80, 90),
             "tropical seasonal forest": (110, 85, 75),
             "tropical rainforest": (140, 95, 60),
-            "glacier": (190, 5, 95),
+            "glacier": (190, 15, 85),
             "mountain": (0, 0, 75),
             "snowy mountain": (0, 0, 95),
         }
         biome_colors = {
-            None: (255, 255, 255),        }
+            None: (255, 255, 255), }
         colors = dict()
         for point_key in self.locations:
             location = self.locations[point_key]
@@ -474,7 +483,7 @@ Polar	Tundra	Tundra	Taiga	Taiga	Taiga	Taiga	Steppe	Steppe	Steppe	Steppe	Desert	D
 
     def generate_locations(self, *_):
         for point in self.points:
-            point_key =tuple(point.tolist())
+            point_key = tuple(point.tolist())
             location = Location()
             height = self.height_map[point_key]
             temperature = self.heat_map[point_key]
@@ -493,12 +502,12 @@ Polar	Tundra	Tundra	Taiga	Taiga	Taiga	Taiga	Steppe	Steppe	Steppe	Steppe	Desert	D
 
     def generate_biome(self, height, temperature, precipitation):
         if height < self.water_level:
-            if temperature < -50:
+            if temperature < -60:
                 return "Glacier"
             else:
                 return "Marine"
         elif height > self.mountain_height:
-            if temperature < -50:
+            if temperature < -60:
                 return "Snowy mountain"
             else:
                 return "Mountain"
