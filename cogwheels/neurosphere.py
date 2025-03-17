@@ -83,51 +83,54 @@ class Neurosphere:
         self.max_height = 100
         self.water_percentage = 71
         self.water_level = None
-        self.tectonic_conflict_coefficient = 0.1
-        self.max_tectonic_speed = 0.4
-        self.oceanic_plate_height_delta = -0.25
-        self.continental_plate_height_delta = 0.25
-        self.oceanic_plates_ratio = 1 / 2
+        self.tectonic_conflict_coefficient = 15
+        self.oceanic_tectonic_conflict_coefficient = 15
+        self.max_tectonic_speed = 0.5
+        self.oceanic_plate_height_delta = -0.3
+        self.continental_plate_height_delta = 0.3
+        self.oceanic_plates_ratio = 0.5
         self.height_noise_octaves = [3, 10, 20, 45]
         self.height_noise_coefficients = [1, 0.5, 0.25, 0.125]
         self.mountain_width = 0.12
-        self.mountain_percentage = 2
+        self.mountain_percentage = 2.5
         self.mountain_height = None
         self.height_map = dict()
         # температура:
-        self.min_temp = -175
-        self.max_temp = 130
-        self.min_heat_noise = -0.25
-        self.max_heat_noise = 0.25
+        self.min_temp = -150
+        self.max_temp = 100
+        self.min_heat_noise = -0.1
+        self.max_heat_noise = 0.1
+        self.heat_delta = 0
         self.heat_tilt_angle = 0.0
         self.heat_rotation_angle = 0.0
-        self.altitude_heat_k = 0.0025
+        self.altitude_heat_k = 0.01
         self.heat_noise_octaves = [2, 4, 8, 16]
-        self.heat_noise_coefficients = [1, 0.5, 0.25, 0.125]
+        self.heat_noise_coefficients = [4, 3, 2, 1]
         self.heat_map = dict()
         # осадки
         self.min_precipitation = 0
         self.max_precipitation = 100
         self.min_precipitation_noise = -0.4
         self.max_precipitation_noise = 0.4
+        self.precipitation_delta = 0
         self.precipitation_tilt_angle = 0.0
         self.precipitation_rotation_angle = 0.0
-        self.altitude_precipitation_k = 0.005
+        self.altitude_precipitation_k = 0.01
         self.precipitation_noise_octaves = [2, 4, 8, 16]
-        self.precipitation_noise_coefficients = [1, 0.5, 0.25, 0.125]
+        self.precipitation_noise_coefficients = [4, 3, 2, 1]
         self.precipitation_map = dict()
         # биомы
-        biomes_string = """Polar	Polar	Tundra	Tundra	Taiga	Taiga	Temperate rainforest	Temperate rainforest	Temperate rainforest	Temperate rainforest	Temperate rainforest	Swamp	Swamp	Swamp	Swamp	Swamp	Tropical rainforest	Tropical rainforest	Tropical rainforest	Tropical rainforest
-Polar	Polar	Tundra	Tundra	Taiga	Taiga	Temperate rainforest	Temperate rainforest	Temperate rainforest	Temperate rainforest	Temperate rainforest	Seasonal forest	Seasonal forest	Seasonal forest	Seasonal forest	Seasonal forest	Tropical rainforest	Tropical rainforest	Tropical rainforest	Tropical rainforest
-Polar	Polar	Tundra	Tundra	Taiga	Taiga	Seasonal forest	Seasonal forest	Seasonal forest	Seasonal forest	Seasonal forest	Seasonal forest	Seasonal forest	Seasonal forest	Seasonal forest	Seasonal forest	Tropical seasonal forest	Tropical seasonal forest	Tropical seasonal forest	Tropical seasonal forest
-Polar	Polar	Tundra	Tundra	Taiga	Taiga	Seasonal forest	Seasonal forest	Seasonal forest	Seasonal forest	Seasonal forest	Seasonal forest	Seasonal forest	Seasonal forest	Seasonal forest	Shrubland	Tropical seasonal forest	Tropical seasonal forest	Tropical seasonal forest	Tropical seasonal forest
-Polar	Polar	Tundra	Tundra	Taiga	Taiga	Seasonal forest	Seasonal forest	Seasonal forest	Seasonal forest	Seasonal forest	Seasonal forest	Seasonal forest	Seasonal forest	Shrubland	Shrubland	Savanna	Savanna	Savanna	Savanna
-Polar	Polar	Tundra	Tundra	Taiga	Taiga	Seasonal forest	Seasonal forest	Seasonal forest	Seasonal forest	Seasonal forest	Seasonal forest	Seasonal forest	Shrubland	Shrubland	Shrubland	Savanna	Savanna	Savanna	Savanna
-Polar	Polar	Tundra	Tundra	Taiga	Taiga	Plains	Plains	Plains	Plains	Plains	Plains	Shrubland	Shrubland	Shrubland	Shrubland	Savanna	Savanna	Savanna	Tropical desert
-Polar	Polar	Tundra	Tundra	Taiga	Taiga	Plains	Plains	Plains	Plains	Plains	Plains	Shrubland	Shrubland	Shrubland	Shrubland	Savanna	Tropical desert	Tropical desert	Tropical desert
-Polar	Polar	Tundra	Tundra	Taiga	Plains	Plains	Plains	Plains	Plains	Plains	Desert	Desert	Desert	Desert	Desert	Tropical desert	Tropical desert	Tropical desert	Tropical desert
-Polar	Polar	Tundra	Tundra	Taiga	Plains	Plains	Plains	Plains	Plains	Desert	Desert	Desert	Desert	Desert	Desert	Tropical desert	Tropical desert	Tropical desert	Tropical desert"""
-        self.biomes_table = self.table(biomes_string)
+        biomes_string = """Polar	Polar	Tundra	Tundra	Tundra	Taiga	Taiga	Swamp	Swamp	Swamp	Swamp	Temperate rainforest	Temperate rainforest	Temperate rainforest	Temperate rainforest	Tropical rainforest	Tropical rainforest	Tropical rainforest	Tropical rainforest	Tropical rainforest
+Polar	Polar	Tundra	Tundra	Tundra	Taiga	Taiga	Swamp	Swamp	Swamp	Swamp	Temperate rainforest	Temperate rainforest	Temperate rainforest	Temperate rainforest	Tropical rainforest	Tropical rainforest	Tropical rainforest	Tropical rainforest	Tropical rainforest
+Polar	Polar	Tundra	Tundra	Tundra	Taiga	Taiga	Seasonal forest	Seasonal forest	Seasonal forest	Seasonal forest	Seasonal forest	Seasonal forest	Seasonal forest	Seasonal forest	Tropical seasonal forest	Tropical seasonal forest	Tropical seasonal forest	Tropical seasonal forest	Tropical seasonal forest
+Polar	Polar	Tundra	Tundra	Tundra	Taiga	Taiga	Seasonal forest	Seasonal forest	Seasonal forest	Seasonal forest	Seasonal forest	Seasonal forest	Seasonal forest	Seasonal forest	Tropical seasonal forest	Tropical seasonal forest	Tropical seasonal forest	Tropical seasonal forest	Tropical seasonal forest
+Polar	Polar	Tundra	Tundra	Tundra	Taiga	Taiga	Seasonal forest	Seasonal forest	Seasonal forest	Seasonal forest	Plains	Plains	Plains	Plains	Savanna	Savanna	Savanna	Savanna	Savanna
+Polar	Polar	Tundra	Tundra	Taiga	Taiga	Taiga	Seasonal forest	Seasonal forest	Seasonal forest	Seasonal forest	Plains	Plains	Plains	Plains	Savanna	Savanna	Savanna	Savanna	Savanna
+Polar	Polar	Tundra	Tundra	Taiga	Taiga	Taiga	Plains	Plains	Plains	Plains	Steppe	Steppe	Steppe	Steppe	Savanna	Savanna	Savanna	Savanna	Savanna
+Polar	Polar	Tundra	Tundra	Taiga	Taiga	Taiga	Plains	Plains	Plains	Plains	Steppe	Steppe	Steppe	Steppe	Savanna	Savanna	Savanna	Savanna	Desert
+Polar	Polar	Tundra	Tundra	Taiga	Taiga	Taiga	Steppe	Steppe	Steppe	Steppe	Desert	Desert	Desert	Desert	Desert	Desert	Desert	Desert	Tropical desert
+Polar	Polar	Tundra	Tundra	Taiga	Taiga	Taiga	Steppe	Steppe	Steppe	Steppe	Desert	Desert	Desert	Desert	Tropical desert	Tropical desert	Tropical desert	Tropical desert	Tropical desert"""
+        self.biomes_table = self.table(biomes_string)[::-1]
         # self.load_data(data)
         self.borders = []
 
@@ -175,7 +178,7 @@ Polar	Polar	Tundra	Tundra	Taiga	Plains	Plains	Plains	Plains	Plains	Desert	Desert
             z1 = z
             z2 = np.sin(self.heat_tilt_angle) * y1 + np.cos(self.heat_tilt_angle) * z1
             effective_lat = np.arcsin(z2)
-            self.heat_map[point_key] = np.cos(effective_lat) - 3
+            self.heat_map[point_key] = np.cos(effective_lat) + self.heat_delta
             # добавляем шум
             self.heat_map[point_key] += noise_map[point_key]
             # зависимость от высоты
@@ -205,7 +208,7 @@ Polar	Polar	Tundra	Tundra	Taiga	Plains	Plains	Plains	Plains	Plains	Desert	Desert
             z1 = z
             z2 = np.sin(self.precipitation_tilt_angle) * y1 + np.cos(self.precipitation_tilt_angle) * z1
             effective_lat = np.arcsin(z2)
-            self.precipitation_map[point_key] = np.cos((4 * effective_lat + np.pi) / 2) ** 2
+            self.precipitation_map[point_key] = np.cos((4 * effective_lat + np.pi) / 2) ** 2 + self.precipitation_delta
             # добавляем шум
             self.precipitation_map[point_key] += noise_map[point_key]
             # зависимость от высоты
@@ -256,6 +259,8 @@ Polar	Polar	Tundra	Tundra	Taiga	Plains	Plains	Plains	Plains	Plains	Desert	Desert
             else:
                 self.height_map[point_key] += self.continental_plate_height_delta
             nearest_points = self.find_nearest_points_by_distance(*point, self.mountain_width)
+            conflict_height_delta = 0
+            conflict_points_count = 0
             for point2 in nearest_points:
                 x1, y1 = point
                 x2, y2 = point2
@@ -273,7 +278,14 @@ Polar	Polar	Tundra	Tundra	Taiga	Plains	Plains	Plains	Plains	Plains	Desert	Desert
                 vector2 = tectonic_movement[tectonic_index_2]
                 point_d = self.haversine_move(*point_c, *vector2)
                 conflict = self.calculate_vector_conflict(point_a, point_b, point_c, point_d)
-                self.height_map[point_key] += conflict * self.tectonic_conflict_coefficient
+                if tectonic_index in oceanic_plates and tectonic_index_2 in oceanic_plates:
+                    k = self.oceanic_tectonic_conflict_coefficient
+                else:
+                    k = self.tectonic_conflict_coefficient
+                conflict_height_delta += conflict / (2 * self.max_tectonic_speed) * k
+                conflict_points_count += 1
+            if conflict_height_delta != 0:  # if height_delta != 0 then conflict_points_count > 0 guaranteed
+                self.height_map[point_key] += conflict_height_delta / conflict_points_count
 
         # for point in self.points:
         #     point_key = tuple(point.tolist())
@@ -421,7 +433,7 @@ Polar	Polar	Tundra	Tundra	Taiga	Plains	Plains	Plains	Plains	Plains	Desert	Desert
     def generate_colors_by_biomes(self):
         biome_hsv = {
             "marine": (210, 90, 70),
-            "desert": (37, 80, 90),
+            "desert": (45, 85, 90),
             "savanna": (65, 85, 80),
             "polar": (190, 0, 95),
             "tundra": (200, 50, 85),
@@ -430,8 +442,8 @@ Polar	Polar	Tundra	Tundra	Taiga	Plains	Plains	Plains	Plains	Plains	Desert	Desert
             "seasonal forest": (100, 80, 70),
             "temperate rainforest": (120, 90, 80),
             "swamp": (100, 60, 60),
-            "shrubland": (70, 65, 65),
-            "tropical desert": (45, 85, 90),
+            "steppe": (70, 65, 80),
+            "tropical desert": (37, 80, 90),
             "tropical seasonal forest": (110, 85, 75),
             "tropical rainforest": (140, 95, 60),
             "glacier": (190, 5, 95),
@@ -474,12 +486,12 @@ Polar	Polar	Tundra	Tundra	Taiga	Plains	Plains	Plains	Plains	Plains	Desert	Desert
 
     def generate_biome(self, height, temperature, precipitation):
         if height < self.water_level:
-            if temperature < -40:
+            if temperature < -50:
                 return "Glacier"
             else:
                 return "Marine"
         elif height > self.mountain_height:
-            if temperature < -30:
+            if temperature < -50:
                 return "Snowy mountain"
             else:
                 return "Mountain"
