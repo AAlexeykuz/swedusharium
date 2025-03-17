@@ -69,13 +69,13 @@ class Neurosphere:
         # тектоника:
         self.big_tectonics_number = 7
         self.small_tectonics_number = 7
-        self.small_tectonics_delta = 0.35,  # расстояние между плитами, где могут генерироваться малые плиты в радианах
-        self.small_tectonics_max_distance = 0.25,  # максимальный радиус малых плит в радианах
+        self.small_tectonics_delta = 0.4,  # расстояние между плитами, где могут генерироваться малые плиты в радианах
+        self.small_tectonics_max_distance = 0.3,  # максимальный радиус малых плит в радианах
         # self.tectonic_distance_noise_octaves = [10]
         # self.tectonic_distance_noise_coefficients = [2 / np.sqrt(3) * 8]
-        self.tectonic_distance_noise_octaves = [3, 10, 20, 45]
-        self.tectonic_distance_noise_coefficients = [10, 8, 6, 4]
-        self.tectonic_bearing_noise_octaves = [3, 10, 20, 45]
+        self.tectonic_distance_noise_octaves = [3, 10, 20, 30]
+        self.tectonic_distance_noise_coefficients = [8, 6, 4, 2]
+        self.tectonic_bearing_noise_octaves = [3, 10, 20, 30]
         self.tectonic_bearing_noise_coefficients = [4, 3, 2, 1]
         self.tectonics = dict()
         # высоты:
@@ -83,21 +83,21 @@ class Neurosphere:
         self.max_height = 100
         self.water_percentage = 71
         self.water_level = None
-        self.tectonic_conflict_coefficient = 15
-        self.oceanic_tectonic_conflict_coefficient = 15
-        self.max_tectonic_speed = 0.5
-        self.oceanic_plate_height_delta = -0.3
-        self.continental_plate_height_delta = 0.3
-        self.oceanic_plates_ratio = 0.5
-        self.height_noise_octaves = [3, 10, 20, 45]
+        self.tectonic_conflict_coefficient = 0.15
+        self.oceanic_tectonic_conflict_coefficient = 0.05
+        self.max_tectonic_speed = 2
+        self.oceanic_plate_height_delta = -0.25
+        self.continental_plate_height_delta = 0.25
+        self.oceanic_plates_ratio = self.water_percentage / 100
+        self.height_noise_octaves = [3, 10, 20, 30]
         self.height_noise_coefficients = [1, 0.5, 0.25, 0.125]
-        self.mountain_width = 0.12
-        self.mountain_percentage = 2.5
+        self.mountain_width = 3.5 / self.radius
+        self.mountain_percentage = 2
         self.mountain_height = None
         self.height_map = dict()
         # температура:
-        self.min_temp = -150
-        self.max_temp = 100
+        self.min_temp = -200
+        self.max_temp = 125
         self.min_heat_noise = -0.1
         self.max_heat_noise = 0.1
         self.heat_delta = 0
@@ -110,8 +110,8 @@ class Neurosphere:
         # осадки
         self.min_precipitation = 0
         self.max_precipitation = 100
-        self.min_precipitation_noise = -0.4
-        self.max_precipitation_noise = 0.4
+        self.min_precipitation_noise = -0.5
+        self.max_precipitation_noise = 0.5
         self.precipitation_delta = 0
         self.precipitation_tilt_angle = 0.0
         self.precipitation_rotation_angle = 0.0
@@ -120,17 +120,19 @@ class Neurosphere:
         self.precipitation_noise_coefficients = [4, 3, 2, 1]
         self.precipitation_map = dict()
         # биомы
-        biomes_string = """Polar	Polar	Tundra	Tundra	Tundra	Taiga	Taiga	Swamp	Swamp	Swamp	Swamp	Temperate rainforest	Temperate rainforest	Temperate rainforest	Temperate rainforest	Tropical rainforest	Tropical rainforest	Tropical rainforest	Tropical rainforest	Tropical rainforest
-Polar	Polar	Tundra	Tundra	Tundra	Taiga	Taiga	Swamp	Swamp	Swamp	Swamp	Temperate rainforest	Temperate rainforest	Temperate rainforest	Temperate rainforest	Tropical rainforest	Tropical rainforest	Tropical rainforest	Tropical rainforest	Tropical rainforest
-Polar	Polar	Tundra	Tundra	Tundra	Taiga	Taiga	Seasonal forest	Seasonal forest	Seasonal forest	Seasonal forest	Seasonal forest	Seasonal forest	Seasonal forest	Seasonal forest	Tropical seasonal forest	Tropical seasonal forest	Tropical seasonal forest	Tropical seasonal forest	Tropical seasonal forest
-Polar	Polar	Tundra	Tundra	Tundra	Taiga	Taiga	Seasonal forest	Seasonal forest	Seasonal forest	Seasonal forest	Seasonal forest	Seasonal forest	Seasonal forest	Seasonal forest	Tropical seasonal forest	Tropical seasonal forest	Tropical seasonal forest	Tropical seasonal forest	Tropical seasonal forest
-Polar	Polar	Tundra	Tundra	Tundra	Taiga	Taiga	Seasonal forest	Seasonal forest	Seasonal forest	Seasonal forest	Plains	Plains	Plains	Plains	Savanna	Savanna	Savanna	Savanna	Savanna
-Polar	Polar	Tundra	Tundra	Taiga	Taiga	Taiga	Seasonal forest	Seasonal forest	Seasonal forest	Seasonal forest	Plains	Plains	Plains	Plains	Savanna	Savanna	Savanna	Savanna	Savanna
-Polar	Polar	Tundra	Tundra	Taiga	Taiga	Taiga	Plains	Plains	Plains	Plains	Steppe	Steppe	Steppe	Steppe	Savanna	Savanna	Savanna	Savanna	Savanna
-Polar	Polar	Tundra	Tundra	Taiga	Taiga	Taiga	Plains	Plains	Plains	Plains	Steppe	Steppe	Steppe	Steppe	Savanna	Savanna	Savanna	Savanna	Desert
-Polar	Polar	Tundra	Tundra	Taiga	Taiga	Taiga	Steppe	Steppe	Steppe	Steppe	Desert	Desert	Desert	Desert	Desert	Desert	Desert	Desert	Tropical desert
-Polar	Polar	Tundra	Tundra	Taiga	Taiga	Taiga	Steppe	Steppe	Steppe	Steppe	Desert	Desert	Desert	Desert	Tropical desert	Tropical desert	Tropical desert	Tropical desert	Tropical desert"""
+        biomes_string = """Polar	Polar	Tundra	Tundra	Taiga	Taiga	Taiga	Swamp	Swamp	Swamp	Swamp	Temperate rainforest	Temperate rainforest	Temperate rainforest	Temperate rainforest	Tropical rainforest	Tropical rainforest	Tropical rainforest	Tropical rainforest	Tropical rainforest
+Polar	Tundra	Tundra	Tundra	Taiga	Taiga	Taiga	Swamp	Swamp	Swamp	Swamp	Temperate rainforest	Temperate rainforest	Temperate rainforest	Temperate rainforest	Tropical rainforest	Tropical rainforest	Tropical rainforest	Tropical rainforest	Tropical rainforest
+Polar	Tundra	Tundra	Taiga	Taiga	Taiga	Taiga	Seasonal forest	Seasonal forest	Seasonal forest	Seasonal forest	Seasonal forest	Seasonal forest	Seasonal forest	Seasonal forest	Tropical seasonal forest	Tropical seasonal forest	Tropical seasonal forest	Tropical seasonal forest	Tropical seasonal forest
+Polar	Tundra	Tundra	Taiga	Taiga	Taiga	Taiga	Seasonal forest	Seasonal forest	Seasonal forest	Seasonal forest	Seasonal forest	Seasonal forest	Seasonal forest	Seasonal forest	Tropical seasonal forest	Tropical seasonal forest	Tropical seasonal forest	Tropical seasonal forest	Tropical seasonal forest
+Polar	Tundra	Tundra	Taiga	Taiga	Taiga	Taiga	Seasonal forest	Seasonal forest	Seasonal forest	Seasonal forest	Plains	Plains	Plains	Plains	Savanna	Savanna	Savanna	Savanna	Savanna
+Polar	Tundra	Tundra	Taiga	Taiga	Taiga	Taiga	Seasonal forest	Seasonal forest	Seasonal forest	Seasonal forest	Plains	Plains	Plains	Plains	Savanna	Savanna	Savanna	Savanna	Savanna
+Polar	Tundra	Tundra	Taiga	Taiga	Taiga	Taiga	Plains	Plains	Plains	Plains	Steppe	Steppe	Steppe	Steppe	Savanna	Savanna	Savanna	Savanna	Savanna
+Polar	Tundra	Tundra	Taiga	Taiga	Taiga	Taiga	Plains	Plains	Plains	Plains	Steppe	Steppe	Steppe	Steppe	Savanna	Savanna	Savanna	Savanna	Desert
+Polar	Tundra	Tundra	Taiga	Taiga	Taiga	Taiga	Steppe	Steppe	Steppe	Steppe	Desert	Desert	Desert	Desert	Desert	Desert	Desert	Desert	Tropical desert
+Polar	Tundra	Tundra	Taiga	Taiga	Taiga	Taiga	Steppe	Steppe	Steppe	Steppe	Desert	Desert	Desert	Desert	Tropical desert	Tropical desert	Tropical desert	Tropical desert	Tropical desert"""
         self.biomes_table = self.table(biomes_string)[::-1]
+        # дебаг
+        self.draw_tectonics = False
         # self.load_data(data)
         self.borders = []
 
@@ -285,22 +287,23 @@ Polar	Polar	Tundra	Tundra	Taiga	Taiga	Taiga	Steppe	Steppe	Steppe	Steppe	Desert	D
                 conflict_height_delta += conflict / (2 * self.max_tectonic_speed) * k
                 conflict_points_count += 1
             if conflict_height_delta != 0:  # if height_delta != 0 then conflict_points_count > 0 guaranteed
-                self.height_map[point_key] += conflict_height_delta / conflict_points_count
+                self.height_map[point_key] += conflict_height_delta
 
-        # for point in self.points:
-        #     point_key = tuple(point.tolist())
-        #     tectonic_index = self.tectonics[point_key]
-        #     nearest_points = self.find_nearest_points_by_distance(*point, 1.15 / self.radius)
-        #     for point2 in nearest_points:
-        #         x1, y1 = point
-        #         x2, y2 = point2
-        #         if (x1, y1) == (x2, y2):
-        #             continue
-        #         point_key_2 = tuple(point2.tolist())
-        #         tectonic_index_2 = self.tectonics[point_key_2]
-        #         if tectonic_index == tectonic_index_2:
-        #             continue
-        #         self.borders.append(point_key)
+        if self.draw_tectonics:
+            for point in self.points:
+                point_key = tuple(point.tolist())
+                tectonic_index = self.tectonics[point_key]
+                nearest_points = self.find_nearest_points_by_distance(*point, 1.1 / self.radius)
+                for point2 in nearest_points:
+                    x1, y1 = point
+                    x2, y2 = point2
+                    if (x1, y1) == (x2, y2):
+                        continue
+                    point_key_2 = tuple(point2.tolist())
+                    tectonic_index_2 = self.tectonics[point_key_2]
+                    if tectonic_index == tectonic_index_2:
+                        continue
+                    self.borders.append(point_key)
 
         self.height_map = self.normalize_map_by_min_max(self.height_map, self.min_height, self.max_height)
         self.water_level = np.percentile(np.array(list(self.height_map.values())), self.water_percentage)
@@ -461,6 +464,10 @@ Polar	Polar	Tundra	Tundra	Taiga	Taiga	Taiga	Steppe	Steppe	Steppe	Steppe	Desert	D
                 continue
             hue, saturation, value = biome_hsv[biome]
             r, g, b = colorsys.hsv_to_rgb(hue / 360, saturation / 100, value / 100)
+            if point_key in self.borders:
+                r /= 3
+                g /= 3
+                b /= 3
             color = int(r * 255), int(g * 255), int(b * 255)
             colors[point_key] = color
         return colors
