@@ -53,6 +53,7 @@ class Neurosphere:
         # seed = 4709
         # seed = 7940
         # seed = 1489 r=25
+        # seed = 246
         random.seed(seed)
         logging.info(f"Seed: {seed}")
         self.radius = data["radius"]
@@ -86,8 +87,8 @@ class Neurosphere:
         self.water_percentage = 71
         self.water_level = None
         self.tectonic_conflict_coefficient = 0.15
-        self.oceanic_tectonic_conflict_coefficient = 0.05
-        self.max_tectonic_speed = 3
+        self.oceanic_tectonic_conflict_coefficient = 0.075
+        self.max_tectonic_speed = 2.5
         self.oceanic_plate_height_delta = -0.25
         self.continental_plate_height_delta = 0.25
         self.oceanic_plates_ratio = self.water_percentage / 100
@@ -126,11 +127,11 @@ class Neurosphere:
 Polar	Polar	Tundra	Tundra	Taiga	Taiga	Taiga	Taiga	Temperate rainforest	Temperate rainforest	Temperate rainforest	Temperate rainforest	Swamp	Swamp	Swamp	Swamp	Tropical rainforest	Tropical rainforest	Tropical rainforest	Tropical rainforest
 Polar	Polar	Tundra	Tundra	Taiga	Taiga	Taiga	Taiga	Seasonal forest	Seasonal forest	Seasonal forest	Seasonal forest	Seasonal forest	Seasonal forest	Seasonal forest	Seasonal forest	Tropical seasonal forest	Tropical seasonal forest	Tropical seasonal forest	Tropical seasonal forest
 Polar	Polar	Tundra	Tundra	Taiga	Taiga	Taiga	Taiga	Seasonal forest	Seasonal forest	Seasonal forest	Seasonal forest	Seasonal forest	Seasonal forest	Seasonal forest	Tropical seasonal forest	Tropical seasonal forest	Tropical seasonal forest	Tropical seasonal forest	Tropical seasonal forest
+Polar	Polar	Tundra	Tundra	Taiga	Taiga	Taiga	Taiga	Plains	Plains	Plains	Plains	Plains	Plains	Plains	Plains	Savanna	Savanna	Savanna	Savanna
 Polar	Polar	Tundra	Tundra	Taiga	Taiga	Taiga	Taiga	Plains	Plains	Plains	Plains	Plains	Plains	Plains	Savanna	Savanna	Savanna	Savanna	Savanna
-Polar	Polar	Tundra	Tundra	Taiga	Taiga	Taiga	Taiga	Plains	Plains	Plains	Plains	Plains	Plains	Savanna	Savanna	Savanna	Savanna	Savanna	Savanna
-Polar	Polar	Tundra	Tundra	Taiga	Taiga	Taiga	Taiga	Plains	Plains	Plains	Plains	Plains	Plains	Savanna	Savanna	Savanna	Savanna	Savanna	Savanna
-Polar	Polar	Tundra	Tundra	Taiga	Taiga	Taiga	Taiga	Plains	Plains	Plains	Plains	Steppe	Steppe	Steppe	Steppe	Tropical desert	Tropical desert	Tropical desert	Tropical desert
-Polar	Polar	Tundra	Tundra	Taiga	Taiga	Taiga	Taiga	Steppe	Steppe	Steppe	Steppe	Desert	Desert	Desert	Desert	Tropical desert	Tropical desert	Tropical desert	Tropical desert
+Polar	Polar	Tundra	Tundra	Taiga	Taiga	Taiga	Taiga	Plains	Plains	Plains	Plains	Plains	Plains	Plains	Savanna	Savanna	Savanna	Savanna	Savanna
+Polar	Polar	Tundra	Tundra	Taiga	Taiga	Taiga	Taiga	Plains	Plains	Plains	Plains	Steppe	Steppe	Steppe	Desert	Tropical desert	Tropical desert	Tropical desert	Tropical desert
+Polar	Polar	Tundra	Tundra	Taiga	Taiga	Taiga	Taiga	Steppe	Steppe	Steppe	Steppe	Steppe	Desert	Desert	Desert	Tropical desert	Tropical desert	Tropical desert	Tropical desert
 Polar	Polar	Tundra	Tundra	Taiga	Taiga	Taiga	Steppe	Steppe	Steppe	Steppe	Steppe	Desert	Desert	Desert	Desert	Tropical desert	Tropical desert	Tropical desert	Tropical desert"""
         self.biomes_table = self.table(biomes_string)[::-1]
         # дебаг
