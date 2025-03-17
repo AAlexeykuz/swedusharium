@@ -54,6 +54,7 @@ class Neurosphere:
         # seed = 7940
         # seed = 1489 r=25
         # seed = 246
+        # 6849 крутой мир с двумя континентами
         random.seed(seed)
         logging.info(f"Seed: {seed}")
         self.radius = data["radius"]
@@ -119,6 +120,8 @@ class Neurosphere:
         self.precipitation_tilt_angle = 0.0
         self.precipitation_rotation_angle = 0.0
         self.altitude_precipitation_k = 0.1
+        self.water_precipitation_increase = 15
+        self.precipitation_increase_level = 3
         self.precipitation_noise_octaves = [3, 5, 4, 6]
         self.precipitation_noise_coefficients = [4, 3, 2, 1]
         self.precipitation_map = dict()
@@ -159,6 +162,8 @@ Polar	Polar	Tundra	Tundra	Taiga	Taiga	Taiga	Steppe	Steppe	Steppe	Steppe	Steppe	D
                 ground_temperatures.append(self.heat_map[point_key])
         logging.info(f"Средняя температура: {np.average(list(self.heat_map.values()))}")
         logging.info(f"Средняя температура на суше: {np.average(ground_temperatures)}")
+
+    # ======= Методы генерации =======
 
     # ======= Методы генерации =======
 
@@ -225,7 +230,9 @@ Polar	Polar	Tundra	Tundra	Taiga	Taiga	Taiga	Steppe	Steppe	Steppe	Steppe	Steppe	D
         for point in self.points:
             point_key = tuple(point.tolist())
             height = self.height_map[point_key]
-            if height > self.water_level:
+            if self.water_level < height < self.water_level + self.precipitation_increase_level:
+                self.precipitation_map[point_key] += self.water_precipitation_increase
+            elif height > self.water_level:
                 self.precipitation_map[point_key] += (height - self.water_level) * self.altitude_precipitation_k
         self.precipitation_map = self.normalize_map_by_min_max(self.precipitation_map,
                                                                self.min_precipitation,

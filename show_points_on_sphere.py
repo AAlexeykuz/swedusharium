@@ -101,7 +101,7 @@ def plot_sphere_points(points, colors):
     color_array = np.array(color_list)
 
     # Plot the visible points.
-    scatter = ax.scatter(x_vis, y_vis, z_vis, s=50, c=color_array, alpha=1)
+    scatter = ax.scatter(x_vis, y_vis, z_vis, s=100, c=color_array, alpha=1)
 
     # Draw a wireframe sphere for context.
     u = np.linspace(0, 2 * np.pi, 30)
