@@ -57,12 +57,10 @@ class Neurosphere:
         # 6849 крутой мир с двумя континентами
         random.seed(seed)
         logging.info(f"Seed: {seed}")
-        self.radius = data["radius"]
+
+        # ======= Параметры симуляции =======
+
         self.time = 0
-
-        self.points: np.array = self.generate_sphere_points()
-        self.tree = BallTree(self.points, metric='haversine')
-
         self.locations = dict()
         self.characters = dict()
         self.life = dict()
@@ -70,6 +68,23 @@ class Neurosphere:
         self.structures = dict()
 
         # ======= Параметры генерации =======
+
+        seed = random.randint(0, 10000)
+        # seed = 603  # архипелаг
+        # seed = 5950
+        # seed = 29
+        # seed = 3484
+        # seed = 5757
+        # seed = 4709
+        # seed = 7940
+        # seed = 1489 r=25
+        # seed = 246
+        # 6849 крутой мир с двумя континентами
+        random.seed(seed)
+        logging.info(f"Seed: {seed}")
+        self.radius = data["radius"]
+        self.points: np.array = self.generate_sphere_points()
+        self.tree = BallTree(self.points, metric='haversine')
         # тектоника:
         self.big_tectonics_number = 7
         self.small_tectonics_number = 7
@@ -163,7 +178,11 @@ Polar	Polar	Tundra	Tundra	Taiga	Taiga	Taiga	Steppe	Steppe	Steppe	Steppe	Steppe	D
         logging.info(f"Средняя температура: {np.average(list(self.heat_map.values()))}")
         logging.info(f"Средняя температура на суше: {np.average(ground_temperatures)}")
 
-    # ======= Методы генерации =======
+    # ======= Методы симуляции =======
+
+    def simulate_step(self):
+        # iterate characters
+        self.time += 1
 
     # ======= Методы генерации =======
 
