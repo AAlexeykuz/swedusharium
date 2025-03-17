@@ -87,7 +87,7 @@ class Neurosphere:
         self.water_level = None
         self.tectonic_conflict_coefficient = 0.125
         self.oceanic_tectonic_conflict_coefficient = 0.05
-        self.max_tectonic_speed = 1.5
+        self.max_tectonic_speed = 2
         self.oceanic_plate_height_delta = -0.25
         self.continental_plate_height_delta = 0.25
         self.oceanic_plates_ratio = self.water_percentage / 100
@@ -112,8 +112,8 @@ class Neurosphere:
         # осадки
         self.min_precipitation = 0
         self.max_precipitation = 100
-        self.min_precipitation_noise = -0.5
-        self.max_precipitation_noise = 0.5
+        self.min_precipitation_noise = -0.6
+        self.max_precipitation_noise = 0.6
         self.precipitation_delta = 0.25
         self.precipitation_tilt_angle = 0.0
         self.precipitation_rotation_angle = 0.0
@@ -123,15 +123,15 @@ class Neurosphere:
         self.precipitation_map = dict()
         # биомы
         biomes_string = """Polar	Polar	Tundra	Tundra	Taiga	Taiga	Taiga	Taiga	Taiga	Temperate rainforest	Temperate rainforest	Temperate rainforest	Temperate rainforest	Swamp	Swamp	Swamp	Swamp	Tropical rainforest	Tropical rainforest	Tropical rainforest
-Polar	Polar	Tundra	Tundra	Taiga	Taiga	Taiga	Taiga	Temperate rainforest	Temperate rainforest	Temperate rainforest	Temperate rainforest	Temperate rainforest	Swamp	Swamp	Swamp	Tropical rainforest	Tropical rainforest	Tropical rainforest	Tropical rainforest
-Polar	Polar	Tundra	Tundra	Taiga	Taiga	Taiga	Taiga	Seasonal forest	Seasonal forest	Seasonal forest	Seasonal forest	Seasonal forest	Seasonal forest	Seasonal forest	Seasonal forest	Seasonal forest	Tropical seasonal forest	Tropical seasonal forest	Tropical seasonal forest
+Polar	Polar	Tundra	Tundra	Taiga	Taiga	Taiga	Taiga	Temperate rainforest	Temperate rainforest	Temperate rainforest	Temperate rainforest	Swamp	Swamp	Swamp	Swamp	Tropical rainforest	Tropical rainforest	Tropical rainforest	Tropical rainforest
 Polar	Polar	Tundra	Tundra	Taiga	Taiga	Taiga	Taiga	Seasonal forest	Seasonal forest	Seasonal forest	Seasonal forest	Seasonal forest	Seasonal forest	Seasonal forest	Seasonal forest	Tropical seasonal forest	Tropical seasonal forest	Tropical seasonal forest	Tropical seasonal forest
-Polar	Polar	Tundra	Tundra	Taiga	Taiga	Taiga	Taiga	Seasonal forest	Seasonal forest	Seasonal forest	Seasonal forest	Seasonal forest	Seasonal forest	Seasonal forest	Seasonal forest	Seasonal forest	Savanna	Savanna	Savanna
-Polar	Polar	Tundra	Tundra	Taiga	Taiga	Taiga	Taiga	Seasonal forest	Seasonal forest	Seasonal forest	Seasonal forest	Plains	Plains	Plains	Plains	Savanna	Savanna	Savanna	Savanna
-Polar	Polar	Tundra	Tundra	Taiga	Taiga	Taiga	Taiga	Plains	Plains	Plains	Plains	Plains	Plains	Plains	Plains	Plains	Savanna	Savanna	Savanna
-Polar	Polar	Tundra	Tundra	Taiga	Taiga	Taiga	Taiga	Plains	Plains	Plains	Plains	Steppe	Steppe	Steppe	Steppe	Steppe	Steppe	Steppe	Desert
-Polar	Polar	Tundra	Tundra	Taiga	Taiga	Taiga	Taiga	Steppe	Steppe	Steppe	Steppe	Desert	Desert	Desert	Desert	Desert	Desert	Desert	Tropical desert
-Polar	Polar	Tundra	Tundra	Taiga	Taiga	Taiga	Steppe	Steppe	Steppe	Steppe	Steppe	Desert	Desert	Desert	Desert	Tropical desert	Tropical desert	Tropical desert	Tropical desert"""
+Polar	Polar	Tundra	Tundra	Taiga	Taiga	Taiga	Taiga	Seasonal forest	Seasonal forest	Seasonal forest	Seasonal forest	Seasonal forest	Seasonal forest	Seasonal forest	Tropical seasonal forest	Tropical seasonal forest	Tropical seasonal forest	Tropical seasonal forest	Tropical seasonal forest
+Polar	Polar	Tundra	Tundra	Taiga	Taiga	Taiga	Taiga	Plains	Plains	Plains	Plains	Plains	Plains	Plains	Savanna	Savanna	Savanna	Savanna	Savanna
+Polar	Polar	Tundra	Tundra	Taiga	Taiga	Taiga	Taiga	Plains	Plains	Plains	Plains	Plains	Plains	Savanna	Savanna	Savanna	Savanna	Savanna	Savanna
+Polar	Polar	Tundra	Tundra	Taiga	Taiga	Taiga	Taiga	Plains	Plains	Plains	Plains	Plains	Plains	Savanna	Savanna	Savanna	Savanna	Savanna	Savanna
+Polar	Polar	Tundra	Tundra	Taiga	Taiga	Taiga	Taiga	Plains	Plains	Plains	Plains	Steppe	Steppe	Steppe	Steppe	Steppe	Desert	Desert	Desert
+Polar	Polar	Tundra	Tundra	Taiga	Taiga	Taiga	Taiga	Steppe	Steppe	Steppe	Steppe	Desert	Desert	Desert	Desert	Desert	Desert	Tropical desert	Tropical desert
+Polar	Polar	Tundra	Tundra	Taiga	Taiga	Taiga	Steppe	Steppe	Steppe	Steppe	Steppe	Desert	Desert	Desert	Desert	Desert	Tropical desert	Tropical desert	Tropical desert"""
         self.biomes_table = self.table(biomes_string)[::-1]
         # дебаг
         self.draw_tectonics = False
