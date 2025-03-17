@@ -85,9 +85,9 @@ class Neurosphere:
         self.max_height = 100
         self.water_percentage = 71
         self.water_level = None
-        self.tectonic_conflict_coefficient = 0.125
+        self.tectonic_conflict_coefficient = 0.15
         self.oceanic_tectonic_conflict_coefficient = 0.05
-        self.max_tectonic_speed = 2
+        self.max_tectonic_speed = 3
         self.oceanic_plate_height_delta = -0.25
         self.continental_plate_height_delta = 0.25
         self.oceanic_plates_ratio = self.water_percentage / 100
@@ -99,7 +99,7 @@ class Neurosphere:
         self.height_map = dict()
         # температура:
         self.min_temp = -150
-        self.max_temp = 150
+        self.max_temp = 100
         self.min_heat_noise = -0.25
         self.max_heat_noise = 0.25
         self.heat_delta = 0
@@ -129,9 +129,9 @@ Polar	Polar	Tundra	Tundra	Taiga	Taiga	Taiga	Taiga	Seasonal forest	Seasonal fores
 Polar	Polar	Tundra	Tundra	Taiga	Taiga	Taiga	Taiga	Plains	Plains	Plains	Plains	Plains	Plains	Plains	Savanna	Savanna	Savanna	Savanna	Savanna
 Polar	Polar	Tundra	Tundra	Taiga	Taiga	Taiga	Taiga	Plains	Plains	Plains	Plains	Plains	Plains	Savanna	Savanna	Savanna	Savanna	Savanna	Savanna
 Polar	Polar	Tundra	Tundra	Taiga	Taiga	Taiga	Taiga	Plains	Plains	Plains	Plains	Plains	Plains	Savanna	Savanna	Savanna	Savanna	Savanna	Savanna
-Polar	Polar	Tundra	Tundra	Taiga	Taiga	Taiga	Taiga	Plains	Plains	Plains	Plains	Steppe	Steppe	Steppe	Steppe	Steppe	Desert	Desert	Desert
-Polar	Polar	Tundra	Tundra	Taiga	Taiga	Taiga	Taiga	Steppe	Steppe	Steppe	Steppe	Desert	Desert	Desert	Desert	Desert	Desert	Tropical desert	Tropical desert
-Polar	Polar	Tundra	Tundra	Taiga	Taiga	Taiga	Steppe	Steppe	Steppe	Steppe	Steppe	Desert	Desert	Desert	Desert	Desert	Tropical desert	Tropical desert	Tropical desert"""
+Polar	Polar	Tundra	Tundra	Taiga	Taiga	Taiga	Taiga	Plains	Plains	Plains	Plains	Steppe	Steppe	Steppe	Steppe	Tropical desert	Tropical desert	Tropical desert	Tropical desert
+Polar	Polar	Tundra	Tundra	Taiga	Taiga	Taiga	Taiga	Steppe	Steppe	Steppe	Steppe	Desert	Desert	Desert	Desert	Tropical desert	Tropical desert	Tropical desert	Tropical desert
+Polar	Polar	Tundra	Tundra	Taiga	Taiga	Taiga	Steppe	Steppe	Steppe	Steppe	Steppe	Desert	Desert	Desert	Desert	Tropical desert	Tropical desert	Tropical desert	Tropical desert"""
         self.biomes_table = self.table(biomes_string)[::-1]
         # дебаг
         self.draw_tectonics = False
