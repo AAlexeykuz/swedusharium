@@ -3,13 +3,11 @@ import json
 import logging
 import random
 import time
-
 import disnake
 import noise
 import numpy as np
 from disnake.ext import commands
 from sklearn.neighbors import BallTree
-
 from constants import GUILD_IDS
 
 
@@ -46,19 +44,6 @@ class Neurosphere:
     def __init__(self, file_path="neurosphere/saves/new.json"):
         with open(file_path, "r", encoding="utf-8") as f:
             data = json.load(f)
-        seed = random.randint(0, 10000)
-        # seed = 603  # архипелаг
-        # seed = 5950
-        # seed = 29
-        # seed = 3484
-        # seed = 5757
-        # seed = 4709
-        # seed = 7940
-        # seed = 1489 r=25
-        # seed = 246
-        # 6849 крутой мир с двумя континентами
-        random.seed(seed)
-        logging.info(f"Seed: {seed}")
 
         # ======= Параметры симуляции =======
 
@@ -72,16 +57,6 @@ class Neurosphere:
         # ======= Параметры генерации =======
 
         seed = random.randint(0, 10000)
-        # seed = 603  # архипелаг
-        # seed = 5950
-        # seed = 29
-        # seed = 3484
-        # seed = 5757
-        # seed = 4709
-        # seed = 7940
-        # seed = 1489 r=25
-        # seed = 246
-        # 6849 крутой мир с двумя континентами
         random.seed(seed)
         logging.info(f"Seed: {seed}")
         self.radius = data["radius"]
@@ -814,3 +789,16 @@ class NeurosphereCog(commands.Cog):
 
 def setup(bot):
     bot.add_cog(NeurosphereCog(bot))
+
+
+# seed = 603  # архипелаг
+# seed = 5950
+# seed = 29
+# seed = 3484
+# seed = 5757
+# seed = 4709
+# seed = 7940
+# seed = 1489 r=25
+# seed = 246
+# 6849 крутой мир с двумя континентами
+# 6906 два континета острова r=25

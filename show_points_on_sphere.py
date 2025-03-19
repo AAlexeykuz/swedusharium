@@ -1,7 +1,5 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from numpy.ma.extras import average
-
 from cogwheels.neurosphere import Neurosphere
 import logging
 
@@ -25,7 +23,7 @@ def plot_sphere_points(points, colors):
 
     # Create the figure and 3D axis.
     fig = plt.figure(figsize=(10, 10))
-    ax = fig.add_subplot(111, projection='3d')
+    ax = fig.add_subplot(111, projection="3d")
 
     # Initial calculation of the visible mask based on current view.
     def get_camera_direction():
@@ -40,11 +38,9 @@ def plot_sphere_points(points, colors):
         elev = np.deg2rad(ax.elev)
         # Note: This conversion assumes the camera is at a large distance so that the view
         # is roughly along the vector defined by azim and elev.
-        camera_dir = np.array([
-            np.cos(elev) * np.cos(azim),
-            np.cos(elev) * np.sin(azim),
-            np.sin(elev)
-        ])
+        camera_dir = np.array(
+            [np.cos(elev) * np.cos(azim), np.cos(elev) * np.sin(azim), np.sin(elev)]
+        )
         return camera_dir
 
     visible_border = 0
@@ -78,7 +74,7 @@ def plot_sphere_points(points, colors):
         scatter.set_facecolor(new_color_array)
 
         # Update the title with the current count of visible points.
-        ax.set_title(f'Visible Neurosphere Points ({len(x_vis)} Points)', fontsize=14)
+        ax.set_title(f"Visible Neurosphere Points ({len(x_vis)} Points)", fontsize=14)
         fig.canvas.draw_idle()
 
     # Initially compute visible points.
@@ -109,21 +105,21 @@ def plot_sphere_points(points, colors):
     sphere_x = np.outer(np.cos(u), np.sin(v))
     sphere_y = np.outer(np.sin(u), np.sin(v))
     sphere_z = np.outer(np.ones(np.size(u)), np.cos(v))
-    ax.plot_wireframe(sphere_x, sphere_y, sphere_z, color='gray', alpha=0)
+    ax.plot_wireframe(sphere_x, sphere_y, sphere_z, color="gray", alpha=0)
 
     # Configure the axis appearance.
     ax.set_box_aspect([1, 1, 1])
-    ax.set_xlabel('X')
-    ax.set_ylabel('Y')
-    ax.set_zlabel('Z')
+    ax.set_xlabel("X")
+    ax.set_ylabel("Y")
+    ax.set_zlabel("Z")
     ax.set_xticks([])
     ax.set_yticks([])
     ax.set_zticks([])
 
     # Connect an event handler to update visible points after a view change.
     # You might use 'button_release_event' (after rotating with the mouse) and 'key_release_event' (for keyboard changes).
-    fig.canvas.mpl_connect('button_release_event', update_visible_points)
-    fig.canvas.mpl_connect('key_release_event', update_visible_points)
+    fig.canvas.mpl_connect("button_release_event", update_visible_points)
+    fig.canvas.mpl_connect("key_release_event", update_visible_points)
 
     plt.tight_layout()
     return fig, ax
@@ -151,4 +147,3 @@ if __name__ == "__main__":
     #
     # fig, ax = plot_sphere_points(points, colors)
     # plt.show()
-
