@@ -13,16 +13,14 @@ RED = disnake.ButtonStyle.danger
 
 # swedusharium constants
 MESSAGES = {
-    "nothing":
-        {
-            "content": "Nothing",
-            "components": []
-        },
-    "welcome":
-        {
-            "content": "https://images-ext-1.discordapp.net/external/2RvhWttulwcpeTPXh33P32VFA523JxWkiEFX0Kwai_4/https/i.gifer.com/origin/3c/3c82e43002a5c632edebf76eadc6499a_w200.webp?animated=true",
-            "components": [Button(emoji="🌟", custom_id="verification_send", style=GREEN)]
-        },
+    "nothing": {
+        "content": "Nothing",
+        "components": [],
+    },
+    "welcome": {
+        "content": "https://images-ext-1.discordapp.net/external/2RvhWttulwcpeTPXh33P32VFA523JxWkiEFX0Kwai_4/https/i.gifer.com/origin/3c/3c82e43002a5c632edebf76eadc6499a_w200.webp?animated=true",
+        "components": [Button(emoji="🌟", custom_id="verification_send", style=GREEN)],
+    },
 }
 
 
