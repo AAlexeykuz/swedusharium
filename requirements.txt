@@ -1,0 +1,6 @@
+disnake
+numpy
+noise
+g4f
+scikit-learn
+dotenv

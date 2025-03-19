@@ -34,11 +34,16 @@ class Snake:
         self.snake_coords.append(coords)
 
     def __str__(self):
-        emojis = {None: ":black_large_square:",
-                  "snake": ":green_square:",
-                  "apple": ":apple:"}
+        emojis = {
+            None: ":black_large_square:",
+            "snake": ":green_square:",
+            "apple": ":apple:",
+        }
         output = "\n".join(["".join([emojis[i] for i in line]) for line in self.field])
-        return output + f"\n-# Яблок собрано {self.apples_collected}\n-# Генерация {self.generation_time}с\n-# {MODEL}"
+        return (
+            output
+            + f"\n-# Яблок собрано {self.apples_collected}\n-# Генерация {self.generation_time}с\n-# {MODEL}"
+        )
 
     def get_vision_gpt(self) -> str:
         head = self.snake_coords[-1]
@@ -48,7 +53,7 @@ class Snake:
             f"Apple is at {apple}.",
             f"Snake's head is at {head}.",
             f"All of the snake's cells coordinates are: {self.snake_coords}",
-            f"The snake's current length is {len(self.snake_coords)}"
+            f"The snake's current length is {len(self.snake_coords)}",
         ]
         return "\n".join(output)
 
@@ -88,8 +93,10 @@ class Snake:
         self.move(head_x, head_y)
 
     def move(self, x, y):
-        if (not (0 <= x < len(self.field[0]) and 0 <= y < len(self.field))
-                or self.field[y][x] == "snake"):
+        if (
+            not (0 <= x < len(self.field[0]) and 0 <= y < len(self.field))
+            or self.field[y][x] == "snake"
+        ):
             self.game_over = True
             return
 
@@ -115,28 +122,29 @@ class Snake:
 
     async def execute_gpt_commands(self):
         self.iteration += 1
-        prompt = ("You're a bot that's designed to play snake game. "
-                  "Below there's going to be listed all of the information available to you at this moment of time.\n"
-                  "You have three available commands:\n"
-                  "-x N- moves snake to -x N times.\n"
-                  "+x N - moves snake to +x N times.\n"
-                  "-y N - moves snake to -y N times.\n"
-                  "+y N - moves snake to +y N times.\n"
-                  "For example, if you need to get from (2,2) to (5,7), commands can be like this:\n"
-                  "+x 3\n"
-                  "+y 5\n"
-                  "But remember not to go hit yourself while moving.\n"
-                  "Your goal is to output an array of commands that makes the snake get the apple and not to lose.\n"
-                  "You will lose if you will hit a wall (try to leave 0-9 coordinates) or hit your part.\n"
-                  "Points are (x, y).\n"
-                  "Here's information available to you:\n\n" + self.get_vision_gpt() + "\n\n"
-                  "You should write each command starting from a new line consecutively and nothing else.\n"
-                  )
+        prompt = (
+            "You're a bot that's designed to play snake game. "
+            "Below there's going to be listed all of the information available to you at this moment of time.\n"
+            "You have three available commands:\n"
+            "-x N- moves snake to -x N times.\n"
+            "+x N - moves snake to +x N times.\n"
+            "-y N - moves snake to -y N times.\n"
+            "+y N - moves snake to +y N times.\n"
+            "For example, if you need to get from (2,2) to (5,7), commands can be like this:\n"
+            "+x 3\n"
+            "+y 5\n"
+            "But remember not to go hit yourself while moving.\n"
+            "Your goal is to output an array of commands that makes the snake get the apple and not to lose.\n"
+            "You will lose if you will hit a wall (try to leave 0-9 coordinates) or hit your part.\n"
+            "Points are (x, y).\n"
+            "Here's information available to you:\n\n" + self.get_vision_gpt() + "\n\n"
+            "You should write each command starting from a new line consecutively and nothing else.\n"
+        )
         self.generation_time = time.time()
         response = self.client.chat.completions.create(
             model=MODEL,
             messages=[{"role": "system", "content": prompt}],
-            web_search=False
+            web_search=False,
         )
         self.generation_time = round(time.time() - self.generation_time, 2)
         text = response.choices[0].message.content
@@ -169,7 +177,9 @@ class SnakeCog(commands.Cog):
         self.bot = bot
         self.games = dict()
 
-    @commands.slash_command(name="snake", description="gpt играет в змейку", guild_ids=GUILD_IDS)
+    @commands.slash_command(
+        name="snake", description="gpt играет в змейку", guild_ids=GUILD_IDS
+    )
     async def snake(self, inter: disnake.ApplicationCommandInteraction):
         print("pon")
         await inter.response.send_message("Начало", ephemeral=True)
