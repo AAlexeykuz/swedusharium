@@ -1,2 +1,6 @@
-.venv
+.venv/
 __pycache__/
+.env
+other_files/
+har_and_cookies/
+cogwheels/__pycache__/

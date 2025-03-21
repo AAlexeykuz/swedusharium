@@ -40,6 +40,17 @@ class Location:
         self.biome = biome
 
 
+class LocationHolder:
+    def __init__(self):
+        self.locations = dict()
+    
+    def get_location(coords):
+        pass
+
+    def get_accessible_location(coords):
+        pass
+
+
 class Neurosphere:
     def __init__(self, file_path="neurosphere/saves/new.json"):
         with open(file_path, "r", encoding="utf-8") as f:
