@@ -4,3 +4,4 @@ noise
 g4f
 scikit-learn
 dotenv
+matplotlib
