@@ -76,7 +76,7 @@ polar	tundra	tundra	tundra	taiga	taiga	taiga	taiga	seasonal_forest	seasonal_fore
 polar	tundra	tundra	tundra	taiga	taiga	taiga	taiga	seasonal_forest	seasonal_forest	seasonal_forest	seasonal_forest	seasonal_forest	seasonal_forest	seasonal_forest	tropical_seasonal_forest	tropical_seasonal_forest	tropical_seasonal_forest	tropical_seasonal_forest	tropical_seasonal_forest
 polar	tundra	tundra	tundra	taiga	taiga	taiga	taiga	seasonal_forest	seasonal_forest	seasonal_forest	seasonal_forest	plains	plains	plains	plains	savanna	savanna	savanna	savanna
 polar	tundra	tundra	tundra	taiga	taiga	taiga	taiga	plains	plains	plains	plains	plains	plains	plains	savanna	savanna	savanna	savanna	savanna
-polar	tundra	tundra	tundra	taiga	taiga	taiga	taiga	plains	plains	plains	plains	plains	plains	plains	savanna	savanna	savanna	savanna	savanna
+polar	tundra	tundra	tundra	taiga	taiga	taiga	taiga	plains	plains	plains	plains	plains	plains	plains	savanna	desert	desert	desert	desert
 polar	tundra	tundra	tundra	taiga	taiga	taiga	taiga	plains	plains	plains	plains	steppe	steppe	steppe	desert	tropical_desert	tropical_desert	tropical_desert	tropical_desert
 polar	tundra	tundra	tundra	taiga	taiga	plains	plains	steppe	steppe	steppe	steppe	desert	desert	desert	desert	tropical_desert	tropical_desert	tropical_desert	tropical_desert
 polar	tundra	tundra	tundra	taiga	plains	plains	steppe	steppe	steppe	steppe	steppe	desert	desert	desert	desert	tropical_desert	tropical_desert	tropical_desert	tropical_desert
@@ -336,12 +336,11 @@ polar	tundra	tundra	tundra	taiga	plains	plains	steppe	steppe	steppe	steppe	stepp
             )
             for _ in range(tectonics_number)
         ]
+        mountain_width = self.data["generation"]["height"]["mountain_width_in_units"] / self.radius
         for point1 in self.points:
             point_key_1 = tuple(point1.tolist())
             lat, lon = point_key_1
-            nearest_points = self._find_nearest_points_by_distance(
-                lat, lon, height_data["mountain_width"]
-            )
+            nearest_points = self._find_nearest_points_by_distance(lat, lon, mountain_width)
             tectonic_index_1 = self.tectonic_map[point_key_1]
             conflict_height_delta = 0
             for point2 in nearest_points:
@@ -372,7 +371,6 @@ polar	tundra	tundra	tundra	taiga	plains	plains	steppe	steppe	steppe	steppe	stepp
                 else:
                     k = height_data["tectonic_conflict_coefficient"]
                 conflict_height_delta += conflict / (2 * height_data["max_tectonic_speed"]) * k
-
             self.height_map[point_key_1] += conflict_height_delta
 
     def _draw_tectonic_borders(self):
@@ -417,7 +415,6 @@ polar	tundra	tundra	tundra	taiga	plains	plains	steppe	steppe	steppe	steppe	stepp
         for point in self.points:
             point_key = tuple(point.tolist())
             self.heat_map[point_key] = noise_map[point_key]
-        self.heat_map = self._normalize_map_by_min_max(self.heat_map, 0, 1)
 
     def _add_latitude_delta_to_heat_map(self):
         heat_data = self.data["generation"]["temperature"]
@@ -484,8 +481,6 @@ polar	tundra	tundra	tundra	taiga	plains	plains	steppe	steppe	steppe	steppe	stepp
         for point in self.points:
             point_key = tuple(point.tolist())
             self.precipitation_map[point_key] = noise_map[point_key]
-
-        self.precipitation_map = self._normalize_map_by_min_max(self.precipitation_map, 0, 1)
 
     def _add_latitude_delta_to_precipitation_map(self):
         precipitation_data = self.data["generation"]["precipitation"]

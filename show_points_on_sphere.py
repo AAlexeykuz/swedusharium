@@ -1,7 +1,9 @@
-import numpy as np
-import matplotlib.pyplot as plt
-from cogwheels.neurosphere import Planet
 import logging
+
+import matplotlib.pyplot as plt
+import numpy as np
+
+from cogwheels.neurosphere import Planet
 
 
 def plot_sphere_points(points, colors):
