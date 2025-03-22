@@ -1,11 +1,12 @@
+import asyncio
 import time
 from random import choice
+
 import disnake
 from disnake.ext import commands
 from g4f.client import Client
-from constants import GUILD_IDS
-import asyncio
 
+from constants import GUILD_IDS
 
 MODEL = "o3-mini"
 
@@ -13,8 +14,8 @@ MODEL = "o3-mini"
 class Snake:
     def __init__(self):
         self.game_over = False
-        self.game_message = None
-        self.field = [[None for _ in range(9)] for _ in range(9)]
+        self.game_message: disnake.Message | None = None
+        self.field: list = [[None for _ in range(9)] for _ in range(9)]
         self.snake_coords = []
         self.add_snake_coords((4, 4))
         self.apple_coords = None
@@ -60,15 +61,14 @@ class Snake:
     def get_direction_gpt(self):
         if self.direction == 0:
             return "-y"
-        elif self.direction == 1:
+        if self.direction == 1:
             return "+x"
-        elif self.direction == 2:
+        if self.direction == 2:
             return "+y"
-        else:
-            return "-x"
+        return "-x"
 
     def spawn_apple(self):
-        all_coords = set((x, y) for x in range(9) for y in range(9))
+        all_coords = {(x, y) for x in range(9) for y in range(9)}
         possible_coords = list(all_coords - set(self.snake_coords))
         x, y = choice(possible_coords)
         self.field[y][x] = "apple"
@@ -118,6 +118,7 @@ class Snake:
         self.direction = (self.direction - 1) % 4
 
     async def update_game_message(self):
+        assert self.game_message is not None
         await self.game_message.edit(str(self))
 
     async def execute_gpt_commands(self):
@@ -159,7 +160,7 @@ class Snake:
                 self.direction = 3
             else:
                 continue
-            for i in range(int(line.split()[-1])):
+            for _ in range(int(line.split()[-1])):
                 self.forward()
                 await self.update_game_message()
                 await asyncio.sleep(1)
@@ -169,21 +170,18 @@ class Snake:
     async def main_cycle(self):
         while not self.game_over:
             await self.execute_gpt_commands()
+        assert self.game_message is not None
         await self.game_message.channel.send("Конец!")
 
 
 class SnakeCog(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.games = dict()
+        self.games = {}
 
-    @commands.slash_command(
-        name="snake", description="gpt играет в змейку", guild_ids=GUILD_IDS
-    )
+    @commands.slash_command(name="snake", description="gpt играет в змейку", guild_ids=GUILD_IDS)
     async def snake(self, inter: disnake.ApplicationCommandInteraction):
-        print("pon")
         await inter.response.send_message("Начало", ephemeral=True)
-        print("pon2")
         game = Snake()
         self.games[inter.channel.id] = game
         message = await inter.channel.send(str(game))

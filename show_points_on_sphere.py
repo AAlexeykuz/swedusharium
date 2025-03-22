@@ -1,6 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from cogwheels.neurosphere import Neurosphere
+from cogwheels.neurosphere import Planet
 import logging
 
 
@@ -39,7 +39,11 @@ def plot_sphere_points(points, colors):
         # Note: This conversion assumes the camera is at a large distance so that the view
         # is roughly along the vector defined by azim and elev.
         camera_dir = np.array(
-            [np.cos(elev) * np.cos(azim), np.cos(elev) * np.sin(azim), np.sin(elev)]
+            [
+                np.cos(elev) * np.cos(azim),
+                np.cos(elev) * np.sin(azim),
+                np.sin(elev),
+            ]
         )
         return camera_dir
 
@@ -129,17 +133,10 @@ if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
     logging.info("Приложение запущено")
 
-    sphere = Neurosphere()
-    points = sphere.points
-
-    sphere.generate_tectonics()
-    sphere.generate_heights()
-    sphere.generate_heat_map()
-    sphere.generate_precipitation_map()
-    sphere.generate_locations()
+    sphere = Planet("neurosphere/worlds/planet0.json")
     sphere.statistics()
     colors = sphere.generate_colors_by_biomes()
-    fig, ax = plot_sphere_points(points, colors)
+    fig, ax = plot_sphere_points(sphere.points, colors)
     plt.show()
 
     # precipitation = sphere.generate_precipitation_map(np.deg2rad(0), np.deg2rad(0))

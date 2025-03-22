@@ -1,9 +1,9 @@
-import os
 import logging
+import os
+
 import disnake
 from disnake.ext import commands
 from dotenv import load_dotenv
-from constants import register
 
 load_dotenv()
 TOKEN = os.getenv("DISCORD_TOKEN")
@@ -22,7 +22,7 @@ def load():
 
 @bot.event
 async def on_ready():
-    print(f"{bot.user} запустился!")
+    logging.info(f"{bot.user} запустился!")
 
 
 @bot.event
@@ -33,23 +33,9 @@ async def on_message(message: disnake.Message):
     user_message: str = message.content
     channel: str = str(message.channel)
     if message.guild:
-        print(f"[{message.guild}] <{channel}> {username}: {user_message}")
+        logging.info(f"[{message.guild}] <{channel}> {username}: {user_message}")
     else:
-        print(f"<!NEW DM!> {username}: {user_message}")
-        register(message.author)
-
-        # запись личных сообщений
-        folder_name = f"{message.author.id}"
-        path = f"data/users/{folder_name}/dm.txt"
-        with open(path, "a", encoding="utf-8") as file:
-            file.write(f"{username}: {user_message}\n")
-
-
-@bot.event
-async def on_member_join(member):
-    register(member)
-    with open(f"data/users/{member.id}/channel.txt", "w", encoding="utf-8") as file:
-        file.write("")
+        logging.info(f"<!NEW DM!> {username}: {user_message}")
 
 
 load()
