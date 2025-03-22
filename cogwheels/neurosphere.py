@@ -70,16 +70,16 @@ class Planet(World):
         self.heat_map: dict[tuple[float, float], float] = {}
         self.precipitation_map: dict[tuple[float, float], int] = {}
 
-        biome_string = """polar	tundra	tundra	tundra	taiga	taiga	taiga	taiga	temperate_rainforest	temperate_rainforest	temperate_rainforest	temperate_rainforest	temperate_rainforest	swamp	swamp	swamp	swamp	tropical_rainforest	tropical_rainforest	tropical_rainforest
-polar	tundra	tundra	tundra	taiga	taiga	taiga	taiga	temperate_rainforest	temperate_rainforest	temperate_rainforest	temperate_rainforest	swamp	swamp	swamp	swamp	tropical_rainforest	tropical_rainforest	tropical_rainforest	tropical_rainforest
-polar	tundra	tundra	tundra	taiga	taiga	taiga	taiga	seasonal_forest	seasonal_forest	seasonal_forest	seasonal_forest	seasonal_forest	seasonal_forest	seasonal_forest	seasonal_forest	tropical_seasonal_forest	tropical_seasonal_forest	tropical_seasonal_forest	tropical_seasonal_forest
-polar	tundra	tundra	tundra	taiga	taiga	taiga	taiga	seasonal_forest	seasonal_forest	seasonal_forest	seasonal_forest	seasonal_forest	seasonal_forest	seasonal_forest	tropical_seasonal_forest	tropical_seasonal_forest	tropical_seasonal_forest	tropical_seasonal_forest	tropical_seasonal_forest
-polar	tundra	tundra	tundra	taiga	taiga	taiga	taiga	seasonal_forest	seasonal_forest	seasonal_forest	seasonal_forest	plains	plains	plains	plains	savanna	savanna	savanna	savanna
-polar	tundra	tundra	tundra	taiga	taiga	taiga	taiga	plains	plains	plains	plains	plains	plains	plains	savanna	savanna	savanna	savanna	savanna
-polar	tundra	tundra	tundra	taiga	taiga	taiga	taiga	plains	plains	plains	plains	plains	plains	plains	savanna	desert	desert	desert	desert
-polar	tundra	tundra	tundra	taiga	taiga	taiga	taiga	plains	plains	plains	plains	steppe	steppe	steppe	desert	tropical_desert	tropical_desert	tropical_desert	tropical_desert
+        biome_string = """polar	tundra	tundra	tundra	taiga	taiga	taiga	temperate_rainforest	temperate_rainforest	temperate_rainforest	temperate_rainforest	temperate_rainforest	temperate_rainforest	swamp	swamp	swamp	swamp	tropical_rainforest	tropical_rainforest	tropical_rainforest
+polar	tundra	tundra	tundra	taiga	taiga	taiga	temperate_rainforest	temperate_rainforest	temperate_rainforest	temperate_rainforest	temperate_rainforest	swamp	swamp	swamp	swamp	tropical_rainforest	tropical_rainforest	tropical_rainforest	tropical_rainforest
+polar	tundra	tundra	tundra	taiga	taiga	taiga	seasonal_forest	seasonal_forest	seasonal_forest	seasonal_forest	seasonal_forest	seasonal_forest	seasonal_forest	seasonal_forest	seasonal_forest	tropical_seasonal_forest	tropical_seasonal_forest	tropical_seasonal_forest	tropical_seasonal_forest
+polar	tundra	tundra	tundra	taiga	taiga	taiga	seasonal_forest	seasonal_forest	seasonal_forest	seasonal_forest	seasonal_forest	seasonal_forest	seasonal_forest	seasonal_forest	tropical_seasonal_forest	tropical_seasonal_forest	tropical_seasonal_forest	tropical_seasonal_forest	tropical_seasonal_forest
+polar	tundra	tundra	tundra	taiga	taiga	taiga	seasonal_forest	seasonal_forest	seasonal_forest	seasonal_forest	seasonal_forest	plains	plains	plains	plains	savanna	savanna	savanna	savanna
+polar	tundra	tundra	tundra	taiga	taiga	taiga	plains	plains	plains	plains	plains	plains	plains	plains	savanna	savanna	savanna	savanna	savanna
+polar	tundra	tundra	tundra	taiga	taiga	taiga	plains	plains	plains	plains	plains	plains	plains	plains	savanna	savanna	savanna	desert	desert
+polar	tundra	tundra	tundra	taiga	taiga	taiga	plains	plains	plains	plains	plains	steppe	steppe	steppe	desert	tropical_desert	tropical_desert	tropical_desert	tropical_desert
 polar	tundra	tundra	tundra	taiga	taiga	plains	plains	steppe	steppe	steppe	steppe	desert	desert	desert	desert	tropical_desert	tropical_desert	tropical_desert	tropical_desert
-polar	tundra	tundra	tundra	taiga	plains	plains	steppe	steppe	steppe	steppe	steppe	desert	desert	desert	desert	tropical_desert	tropical_desert	tropical_desert	tropical_desert
+polar	tundra	tundra	tundra	taiga	taiga	plains	steppe	steppe	steppe	steppe	steppe	desert	desert	desert	desert	tropical_desert	tropical_desert	tropical_desert	tropical_desert
 """
         self.biome_table = self._table(biome_string)[::-1]
 
