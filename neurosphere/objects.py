@@ -7,6 +7,12 @@ class Essence:
     def __init__(self, data):
         self.data: dict = data
 
+    def get_data(self, *names):
+        data = self.data
+        for name in names:
+            data = data[name]
+        return data
+
 
 class Location(Essence):
     def __init__(self, data):
@@ -41,7 +47,11 @@ class World(Essence):
         logging.error("Метод generate не реализован")
 
     def generate_locations(self, location_holder: dict[int, Location]) -> None:  # noqa
-        """Должен сгенерировать локации и добавить их к location_holder"""
+        """Должен сгенерировать локации и добавить их к location_holder."""
+        logging.error("Метод generate_locations не реализован")
+
+    def get_location_description(self, location: Location) -> str:  # noqa
+        """Должен давать строку с описанием локации для данного мира."""
         logging.error("Метод generate_locations не реализован")
 
 

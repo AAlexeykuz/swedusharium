@@ -9,6 +9,26 @@ from sklearn.neighbors import BallTree
 
 from neurosphere.objects import Location, World, new_id
 
+BIOME_NAMES = {
+    "marine": "Marine",
+    "desert": "Desert",
+    "savanna": "Savanna",
+    "polar": "Polar",
+    "tundra": "Tundra",
+    "taiga": "Taiga",
+    "plains": "Plains",
+    "seasonal_forest": "Seasonal forest",
+    "temperate_rainforest": "Temperate rainforest",
+    "swamp": "Swamp",
+    "steppe": "Steppe",
+    "tropical_desert": "Tropical desert",
+    "tropical_seasonal_forest": "Tropical seasonal forest",
+    "tropical_rainforest": "Tropical rainforest",
+    "glacier": "Glacier",
+    "mountain": "Mountain",
+    "snowy_mountain": "Snowy Mountain",
+}
+
 
 class Planet(World):
     def __init__(self, data):
@@ -120,15 +140,16 @@ polar	tundra	tundra	tundra	taiga	taiga	plains	steppe	steppe	steppe	steppe	steppe
         for point in self._points:
             new_id_ = new_id(location_holder)
             point_key = tuple(point.tolist())
-            location = self._generate_location(point_key)
+            location = self._generate_location(point_key, new_id_)
             location_holder[new_id_] = location
 
             self._location_map[point_key] = new_id_
             self._point_map[new_id_] = point_key
 
-    def _generate_location(self, point_key):
+    def _generate_location(self, point_key, location_id):
         return Location(
             {
+                "id": location_id,
                 "world_id": self.data["id"],
                 "biome": self._biome_map[point_key],
             }
@@ -842,11 +863,16 @@ polar	tundra	tundra	tundra	taiga	taiga	plains	steppe	steppe	steppe	steppe	steppe
         )
         return tuple([self._location_map[point_key] for point_key in accessible_point_keys])
 
-    def get_accessible_location_description(self, location) -> str:
+    def get_accessible_location_description(self, location: Location) -> str:
         pass
 
-    def get_location_description(self, location_id: int) -> str:
-        
+    def get_location_description(self, location: Location) -> str:
+        output = ""
+        biome_name = BIOME_NAMES[location.get_data("biome")]
+        output += f"Biome: {biome_name}\n"
+        lat, lon = self._point_map[location.get_data("id")]
+        output += f"Latitude: {np.rad2deg(lat):.3f}, longitude: {np.rad2deg(lon):.3f}\n"
+        return output
 
     # endergion Методы нейросферы
 

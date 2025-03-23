@@ -16,7 +16,7 @@ class Neurosphere:
         self._worlds: dict[int, World] = {}
         self._locations: dict[int, Location] = {}
         self._characters: dict[int, Character] = {}
-        self._players = dict[int, int] = {}
+        self._players: dict[int, int] = {}
 
         with open(file_path, encoding="utf-8") as f:
             data = json.load(f)
@@ -64,14 +64,13 @@ class Neurosphere:
 
     def get_player_message(self, char_id: int) -> str:
         world = self.get_world_by_char_id(char_id)
-        location_id = self.get_location_id_by_char_id(char_id)
-        output = world.get_location_description(location_id)
-        return output
+        location = self.get_location_by_char_id(char_id)
+        return world.get_location_description(location)
 
     def get_world_id_by_char_id(self, char_id: int) -> int:
         return self.get_location_by_char_id(char_id).get_world_id()
 
-    def get_world_by_char_id(self, char_id: int) -> int:
+    def get_world_by_char_id(self, char_id: int) -> World:
         return self._worlds[self.get_world_id_by_char_id(char_id)]
 
     def get_location_id_by_char_id(self, char_id: int) -> int:
