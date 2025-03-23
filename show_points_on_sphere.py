@@ -3,7 +3,7 @@ import logging
 import matplotlib.pyplot as plt
 import numpy as np
 
-from cogwheels.neurosphere import Planet
+from neurosphere.worlds import Planet
 
 
 def plot_sphere_points(points, colors):

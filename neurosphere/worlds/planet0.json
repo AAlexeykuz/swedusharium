@@ -1,7 +1,8 @@
 {
-  "generated": false,
+  "id": null,
+  "type": "planet",
   "generation": {
-    "seed": 4902,
+    "seed": null,
     "radius": 25,
     "tectonics": {
       "big_tectonics_number": 7,
@@ -57,12 +58,11 @@
     "water_level": null,
     "mountain_height": null
   },
-  "points": [],
   "maps": {
-    "tectonic_map": {},
-    "height_map": {},
-    "temperature_map": {},
-    "precipitation_map": {},
-    "biome_map": {}
+    "tectonic_map": null,
+    "height_map": null,
+    "heat_map": null,
+    "precipitation_map": null,
+    "biome_map": null
   }
 }
