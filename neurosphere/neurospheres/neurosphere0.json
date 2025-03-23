@@ -1,6 +1,7 @@
 {
   "worlds": [
     {
+      "id": null,
       "type": "planet",
       "generation": {
         "seed": null,
@@ -59,11 +60,22 @@
         "water_level": null,
         "mountain_height": null
       },
-      "locations": []
-    },
-    {},
-    {}
+      "maps": {
+        "tectonic_map": [],
+        "height_map": [],
+        "heat_map": [],
+        "precipitation_map": [],
+        "biome_map": []
+      }
+    }
   ],
-  "locations": [{}, {}, {}],
-  "characters": [{}, {}, {}]
+  "locations": [],
+  "characters": [
+    {
+      "id": null,
+      "ai_level": 0,
+      "location_id": 0
+    }
+  ],
+  "players": []
 }

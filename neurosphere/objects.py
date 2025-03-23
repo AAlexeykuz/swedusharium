@@ -7,16 +7,13 @@ class Essence:
     def __init__(self, data):
         self.data: dict = data
 
-    def get_id(self) -> int | None:
-        return self.data["id"]
-
-    def _set_id(self, object_id):
-        self.data["id"] = object_id
-
 
 class Location(Essence):
     def __init__(self, data):
         super().__init__(data)
+
+    def get_world_id(self):
+        return self.data["world_id"]
 
 
 class Item(Essence):
@@ -27,6 +24,12 @@ class Item(Essence):
 class Character(Essence):
     def __init__(self, data):
         super().__init__(data)
+
+    def get_location_id(self) -> int:
+        return self.data["location_id"]
+
+    def get_ai_level(self) -> int:
+        return self.data["ai_level"]
 
 
 class World(Essence):

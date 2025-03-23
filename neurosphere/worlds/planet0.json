@@ -59,10 +59,11 @@
     "mountain_height": null
   },
   "maps": {
-    "tectonic_map": null,
-    "height_map": null,
-    "heat_map": null,
-    "precipitation_map": null,
-    "biome_map": null
+    "tectonic_map": [],
+    "height_map": [],
+    "heat_map": [],
+    "precipitation_map": [],
+    "biome_map": [],
+    "location_map": []
   }
 }

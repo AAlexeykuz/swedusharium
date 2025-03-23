@@ -1,2 +1,3 @@
-a = {1: 3, 2: 10, 10: 1, -3: 4}
-print(max(a.keys()) + 1)
+from cogwheels.neurosphere import Neurosphere
+
+sphere = Neurosphere("neurosphere/neurospheres/neurosphere0.json")

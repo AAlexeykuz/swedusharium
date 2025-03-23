@@ -3,7 +3,7 @@ import logging
 import matplotlib.pyplot as plt
 import numpy as np
 
-from neurosphere.worlds import Planet
+from cogwheels.neurosphere import Neurosphere
 
 
 def plot_sphere_points(points, colors):
@@ -135,7 +135,8 @@ if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
     logging.info("Приложение запущено")
 
-    sphere = Planet("neurosphere/worlds/planet0.json")
+    neurosphere = Neurosphere("neurosphere/neurospheres/neurosphere0.json")
+    sphere = neurosphere._worlds[0]
     sphere.statistics()
     colors = sphere.generate_colors_by_biomes()
     fig, ax = plot_sphere_points(sphere.points, colors)
