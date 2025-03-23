@@ -12,7 +12,7 @@ WORLD_TYPES = {"planet": Planet}
 
 
 class Neurosphere:
-    def __init__(self, file_path="neurospheres/neurosphere/neurosphere0.json"):
+    def __init__(self, file_path="neurosphere/neurospheres/neurosphere0.json"):
         self._worlds: dict[int, World] = {}
         self._locations: dict[int, Location] = {}
         self._characters: dict[int, Character] = {}
@@ -41,6 +41,8 @@ class Neurosphere:
                 not_generated_worlds.append(world_data)
 
         for world_data in not_generated_worlds:
+            new_id_ = new_id(self._worlds)
+            world_data["id"] = new_id_
             world_class = WORLD_TYPES[world_data["type"]]
             world = world_class(world_data)
             world.generate()
@@ -55,7 +57,7 @@ class Neurosphere:
             self._locations[location_id] = location
 
     def _read_characters(self, data: dict) -> None:
-        characters = data["locations"]
+        characters = data["characters"]
         for character_data in characters:
             character_id = character_data["id"]
             character = Character(character_data)

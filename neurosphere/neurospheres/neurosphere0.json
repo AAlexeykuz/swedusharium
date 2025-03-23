@@ -65,14 +65,15 @@
         "height_map": [],
         "heat_map": [],
         "precipitation_map": [],
-        "biome_map": []
+        "biome_map": [],
+        "location_map": []
       }
     }
   ],
   "locations": [],
   "characters": [
     {
-      "id": null,
+      "id": 0,
       "ai_level": 0,
       "location_id": 0
     }

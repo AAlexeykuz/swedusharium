@@ -2,6 +2,8 @@ import colorsys
 import logging
 import random
 
+# еее
+
 
 class Essence:
     def __init__(self, data):

@@ -871,7 +871,7 @@ polar	tundra	tundra	tundra	taiga	taiga	plains	steppe	steppe	steppe	steppe	steppe
         biome_name = BIOME_NAMES[location.get_data("biome")]
         output += f"Biome: {biome_name}\n"
         lat, lon = self._point_map[location.get_data("id")]
-        output += f"Latitude: {np.rad2deg(lat):.3f}, longitude: {np.rad2deg(lon):.3f}\n"
+        output += f"Latitude: {np.rad2deg(lat):.3f}, longitude: {np.rad2deg(lon) - np.pi:.3f}\n"
         return output
 
     # endergion Методы нейросферы
