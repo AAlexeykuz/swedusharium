@@ -61,6 +61,9 @@ class Character(Essence):
     def set_soul(self, soul: bool) -> None:
         self.data["soul"] = soul
 
+    def get_soul(self) -> bool:
+        return self.data["soul"]
+
 
 class World(Essence):
     def __init__(self, data):

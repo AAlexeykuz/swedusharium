@@ -17,6 +17,8 @@ WORLD_TYPES = {"planet": Planet}
 
 
 class Neurosphere:
+    """Нейросфера - название симуляции генеративных агентов. Не обязательно происходит на сфере."""
+
     def __init__(self, file_path="neurosphere/neurospheres/neurosphere0.json"):
         self._worlds: dict[int, World] = {}
         self._locations: dict[int, Location] = {}
@@ -98,12 +100,14 @@ class Neurosphere:
         char_id = character.get_id()
         location = self._get_location_by_char_id(char_id)
         location.add_character_id(char_id)
+        character.set_soul(True)
 
     def _remove_character(self, character: Character) -> None:
         """Убирает персонажа из нейросферы"""
         char_id = character.get_id()
         location = self._get_location_by_char_id(char_id)
         location.remove_character_id(char_id)
+        character.set_soul(False)
 
     def _add_character_id_to_location(self, char_id, location_id):
         location = self._locations[location_id]
@@ -165,10 +169,13 @@ class Neurosphere:
 
     # region Actions
 
-    def _action_add_character(self, args):
+    def handle_actions(self, char_id: int, actions: list[str]):
+        # TODO сделать собственно
+        pass
+
+    def _action_add_character(self, args: dict):
         location_id = args["location"]
         char_id = args["character"]
-        self._add_ch
 
     # endregion Actions
 
