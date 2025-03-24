@@ -5,7 +5,12 @@ import disnake
 from disnake.ext import commands
 
 from constants import GUILD_IDS
-from neurosphere.objects import Character, Location, World, new_id
+from neurosphere.objects import (
+    Character,
+    Location,
+    World,
+    new_id,
+)
 from neurosphere.worlds import Planet
 
 WORLD_TYPES = {"planet": Planet}
@@ -17,10 +22,14 @@ class Neurosphere:
         self._locations: dict[int, Location] = {}
         self._characters: dict[int, Character] = {}
         self._players: dict[int, int] = {}
+        self._time: int = 0
+        self._action_handler = None  # TODO сделать действия
 
         with open(file_path, encoding="utf-8") as f:
             data = json.load(f)
         self._read_data(data)
+
+    # region JSON Методы
 
     def _read_data(self, data: dict) -> None:
         self._read_worlds(data)
@@ -41,6 +50,7 @@ class Neurosphere:
                 not_generated_worlds.append(world_data)
 
         for world_data in not_generated_worlds:
+            # World generation
             new_id_ = new_id(self._worlds)
             world_data["id"] = new_id_
             world_class = WORLD_TYPES[world_data["type"]]
@@ -58,38 +68,84 @@ class Neurosphere:
 
     def _read_characters(self, data: dict) -> None:
         characters = data["characters"]
+        not_generated_characters = []
+
         for character_data in characters:
             character_id = character_data["id"]
-            character = Character(character_data)
-            # TODO сделать генерацию персонажей
-            self._characters[character_id] = character
+            if character_id is not None:
+                character = Character(character_data)
+                self._characters[character_id] = character
+            else:
+                not_generated_characters.append(character_data)
+
+        for character_data in not_generated_characters:
+            # Character generation
+            new_id_ = new_id(self._characters)
+            character_data["id"] = new_id_
+            world_id = character_data["generation"]["world_id"]
+            world = self._worlds[world_id]
+            character = world.generate_character(character_data)
+            # world.generate_character_items() тоже
+            self._add_character(character)
+            # self._add_items() тоже
+
+    # endregion JSON Методы
+
+    # region Методы управления
+
+    def _add_character(self, character: Character) -> None:
+        """Добавляет персонажа в нейросферу"""
+        char_id = character.get_id()
+        location = self._get_location_by_char_id(char_id)
+        location.add_character_id(char_id)
+
+    def _remove_character(self, character: Character) -> None:
+        """Убирает персонажа из нейросферы"""
+        char_id = character.get_id()
+        location = self._get_location_by_char_id(char_id)
+        location.remove_character_id(char_id)
+
+    def _add_character_id_to_location(self, char_id, location_id):
+        location = self._locations[location_id]
+        location.add_character_id(char_id)
+
+    # endregion
+
+    # region Методы информации
 
     def get_player_message(self, char_id: int) -> str:
-        world = self.get_world_by_char_id(char_id)
-        location = self.get_location_by_char_id(char_id)
+        world = self._get_world_by_char_id(char_id)
+        location = self._get_location_by_char_id(char_id)
         return world.get_location_description(location)
 
-    def get_world_id_by_char_id(self, char_id: int) -> int:
-        return self.get_location_by_char_id(char_id).get_world_id()
+    def _get_world_id_by_char_id(self, char_id: int) -> int:
+        return self._get_location_by_char_id(char_id).get_world_id()
 
-    def get_world_by_char_id(self, char_id: int) -> World:
-        return self._worlds[self.get_world_id_by_char_id(char_id)]
+    def _get_world_by_char_id(self, char_id: int) -> World:
+        return self._worlds[self._get_world_id_by_char_id(char_id)]
 
-    def get_location_id_by_char_id(self, char_id: int) -> int:
+    def _get_world_by_location_id(self, location_id: int) -> World:
+        return self._worlds[self._locations[location_id].get_world_id()]
+
+    def _get_location_id_by_char_id(self, char_id: int) -> int:
         return self._characters[char_id].get_location_id()
 
-    def get_location_by_char_id(self, char_id: int) -> Location:
-        return self._locations[self.get_location_id_by_char_id(char_id)]
+    def _get_location_by_char_id(self, char_id: int) -> Location:
+        return self._locations[self._get_location_id_by_char_id(char_id)]
 
     def is_char_controllable_by_player(self, char_id: int, player_id) -> bool:
         if char_id not in self._characters:
             logging.error("Нельзя контроллировать несуществующего персонажа")
             return False
         char = self._characters[char_id]
-        if char.get_ai_level() != 0:
-            logging.error("Нельзя контроллировать персонажа, контролируемого ИИ")
+        if char.get_soul_level() != 0:
+            logging.error(
+                "Нельзя контроллировать персонажа, контролируемого ИИ"
+            )
             return False
-        return char_id not in self._players or self._players[char_id] == player_id
+        return (
+            char_id not in self._players or self._players[char_id] == player_id
+        )
 
     def get_player_id(self, char_id: int) -> int | None:
         if char_id in self._players:
@@ -105,45 +161,52 @@ class Neurosphere:
             return inverted_players[player_id]
         return None
 
+    # endregion Методы информации
+
+    # region Actions
+
+    def _action_add_character(self, args):
+        location_id = args["location"]
+        char_id = args["character"]
+        self._add_ch
+
+    # endregion Actions
+
 
 class NeurosphereCog(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.neurosphere: Neurosphere = None
-        self.game_messages: dict[int, disnake.Message] = {}  # id юзера: сообщение
+        self.game_messages: dict[
+            int, disnake.Message
+        ] = {}  # id юзера: сообщение
 
     @commands.slash_command(
         name="neurosphere",
         description="Запуск нейросферы",
         guild_ids=GUILD_IDS,
     )
-    async def launch_neurosphere(self, inter: disnake.ApplicationCommandInteraction) -> None:
+    async def launch_neurosphere(
+        self, inter: disnake.ApplicationCommandInteraction
+    ) -> None:
         await inter.response.defer()
         self.neurosphere = Neurosphere()
         await inter.followup.send("Нейросфера запущена")
 
     @commands.slash_command(
-        name="control-character", description="Контроллировать персонажа", guild_ids=GUILD_IDS
+        name="play",
+        description="Играйте за персонажа в нейросфере!",
+        guild_ids=GUILD_IDS,
     )
-    async def test(self, inter: disnake.ApplicationCommandInteraction, char_id: int) -> None:
+    async def add_player(
+        self, inter: disnake.ApplicationCommandInteraction, char_id: int
+    ) -> None:
         if self.neurosphere is None:
-            await inter.response.send_message("Нейросфера не запущена.", ephemeral=True)
+            await inter.response.send_message(
+                "Нейросфера не запущена.", ephemeral=True
+            )
             return
-        if not self.neurosphere.is_char_controllable_by_player(char_id, inter.author.id):
-            await inter.response.send_message("Персонаж не может быть контролирован.")
-            return
-
-        player_id = self.neurosphere.get_player_id(char_id)
-        if player_id is None:
-            self.neurosphere.set_player_id(char_id, inter.author.id)
-        if inter.author.id in self.game_messages:
-            previous_game_message = self.game_messages[inter.author.id]
-            await previous_game_message.delete()
-
-        channel = inter.channel
-        player_message: str = self.neurosphere.get_player_message(char_id)
-        game_message: disnake.Message = await channel.send(player_message)
-        self.game_messages[inter.author.id] = game_message
+        # TODO добавить
 
     @commands.Cog.listener()
     async def on_message(self, message: disnake.Message):

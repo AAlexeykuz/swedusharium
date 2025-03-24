@@ -7,7 +7,7 @@ import noise
 import numpy as np
 from sklearn.neighbors import BallTree
 
-from neurosphere.objects import Location, World, new_id
+from neurosphere.objects import Character, Location, World, new_id
 
 BIOME_NAMES = {
     "marine": "Marine",
@@ -72,8 +72,12 @@ polar	tundra	tundra	tundra	taiga	taiga	plains	steppe	steppe	steppe	steppe	steppe
             height = self._height_map[point_key]
             if height > self.data["generation"]["water_level"]:
                 ground_temperatures.append(self._heat_map[point_key])
-        logging.info(f"Средняя температура: {np.average(list(self._heat_map.values()))}")
-        logging.info(f"Средняя температура на суше: {np.average(ground_temperatures)}")
+        logging.info(
+            f"Средняя температура: {np.average(list(self._heat_map.values()))}"
+        )
+        logging.info(
+            f"Средняя температура на суше: {np.average(ground_temperatures)}"
+        )
 
     def _read_map(self, name: str) -> dict[tuple[float, float]]:
         output = {}
@@ -152,6 +156,12 @@ polar	tundra	tundra	tundra	taiga	taiga	plains	steppe	steppe	steppe	steppe	steppe
                 "id": location_id,
                 "world_id": self.data["id"],
                 "biome": self._biome_map[point_key],
+                "references": {
+                    "structures": [],
+                    "items": [],
+                    "characters": [],
+                    "life": [],
+                },
             }
         )
 
@@ -170,8 +180,10 @@ polar	tundra	tundra	tundra	taiga	taiga	plains	steppe	steppe	steppe	steppe	steppe
 
         noise_point_keys = self._generate_tectonic_noise_point_keys()
 
-        big_tectonics_tree, small_plate_generation_points = self._generate_big_tectonic_plates(
-            noise_point_keys,
+        big_tectonics_tree, small_plate_generation_points = (
+            self._generate_big_tectonic_plates(
+                noise_point_keys,
+            )
         )
 
         self._generate_small_tectonic_plates(
@@ -180,7 +192,9 @@ polar	tundra	tundra	tundra	taiga	taiga	plains	steppe	steppe	steppe	steppe	steppe
             small_plate_generation_points,
         )
 
-        logging.info(f"Генерация тектонических плит: {time.time() - start_time:.2f}с")
+        logging.info(
+            f"Генерация тектонических плит: {time.time() - start_time:.2f}с"
+        )
 
     def _generate_tectonic_noise_point_keys(self):
         noise_point_keys: dict[tuple[float, float], tuple[float, float]] = {}
@@ -211,7 +225,9 @@ polar	tundra	tundra	tundra	taiga	taiga	plains	steppe	steppe	steppe	steppe	steppe
         tectonics_data = self.data["generation"]["tectonics"]
 
         random_points = np.array(
-            random.choices(self._points, k=tectonics_data["big_tectonics_number"])
+            random.choices(
+                self._points, k=tectonics_data["big_tectonics_number"]
+            )
         )
         big_tectonics_points = self._relaxate_points(random_points)
         big_tectonics_tree = BallTree(big_tectonics_points, metric="haversine")
@@ -245,7 +261,9 @@ polar	tundra	tundra	tundra	taiga	taiga	plains	steppe	steppe	steppe	steppe	steppe
                 k=tectonics_data["small_tectonics_number"],
             )
         )
-        small_tectonics_tree = BallTree(small_tectonics_points, metric="haversine")
+        small_tectonics_tree = BallTree(
+            small_tectonics_points, metric="haversine"
+        )
 
         for point in small_plate_generation_points:
             point_key = tuple(point.tolist())
@@ -258,7 +276,9 @@ polar	tundra	tundra	tundra	taiga	taiga	plains	steppe	steppe	steppe	steppe	steppe
             )
 
             if dist > tectonics_data["small_tectonics_max_distance"]:
-                index = big_tectonics_tree.query(query_point, k=1, return_distance=False)[0][0]
+                index = big_tectonics_tree.query(
+                    query_point, k=1, return_distance=False
+                )[0][0]
             self._tectonic_map[point_key] = index
 
     def _generate_height_map(self):
@@ -267,7 +287,8 @@ polar	tundra	tundra	tundra	taiga	taiga	plains	steppe	steppe	steppe	steppe	steppe
         height_data = self.data["generation"]["height"]
         tectonics_data = self.data["generation"]["tectonics"]
         tectonics_number: int = (
-            tectonics_data["big_tectonics_number"] + tectonics_data["small_tectonics_number"]
+            tectonics_data["big_tectonics_number"]
+            + tectonics_data["small_tectonics_number"]
         )
 
         self._generate_height_noise(tectonics_number)
@@ -322,7 +343,10 @@ polar	tundra	tundra	tundra	taiga	taiga	plains	steppe	steppe	steppe	steppe	steppe
 
         for point_key in self._tectonic_map:
             index = self._tectonic_map[point_key]
-            x, y, z = self._spherical_to_cartesian(*point_key) + tectonic_shifts[index]
+            x, y, z = (
+                self._spherical_to_cartesian(*point_key)
+                + tectonic_shifts[index]
+            )
             noise_value = 0
             for octave, k in zip(
                 height_data["height_noise_octaves"],
@@ -330,7 +354,9 @@ polar	tundra	tundra	tundra	taiga	taiga	plains	steppe	steppe	steppe	steppe	steppe
             ):
                 noise_value += k * noise.pnoise3(x, y, z, octaves=octave)
             self._height_map[point_key] = noise_value
-        self._height_map = self._normalize_map_by_min_max(self._height_map, 0, 1)
+        self._height_map = self._normalize_map_by_min_max(
+            self._height_map, 0, 1
+        )
 
     def _add_plate_type_delta_to_height_map(self, oceanic_plates):
         height_data = self.data["generation"]["height"]
@@ -338,11 +364,17 @@ polar	tundra	tundra	tundra	taiga	taiga	plains	steppe	steppe	steppe	steppe	steppe
             point_key: tuple[float, float] = tuple(point.tolist())
             tectonic_index = self._height_map[point_key]
             if tectonic_index in oceanic_plates:
-                self._height_map[point_key] += height_data["oceanic_plate_height_delta"]
+                self._height_map[point_key] += height_data[
+                    "oceanic_plate_height_delta"
+                ]
             else:
-                self._height_map[point_key] += height_data["continental_plate_height_delta"]
+                self._height_map[point_key] += height_data[
+                    "continental_plate_height_delta"
+                ]
 
-    def _add_plate_conflict_to_height_map(self, tectonics_number, oceanic_plates):
+    def _add_plate_conflict_to_height_map(
+        self, tectonics_number, oceanic_plates
+    ):
         height_data = self.data["generation"]["height"]
         tectonic_movement: list[tuple[float, float]] = [
             (
@@ -351,11 +383,16 @@ polar	tundra	tundra	tundra	taiga	taiga	plains	steppe	steppe	steppe	steppe	steppe
             )
             for _ in range(tectonics_number)
         ]
-        mountain_width = self.data["generation"]["height"]["mountain_width_in_units"] / self._radius
+        mountain_width = (
+            self.data["generation"]["height"]["mountain_width_in_units"]
+            / self._radius
+        )
         for point1 in self._points:
             point_key_1 = tuple(point1.tolist())
             lat, lon = point_key_1
-            nearest_points = self._find_nearest_points_by_distance(lat, lon, mountain_width)
+            nearest_points = self._find_nearest_points_by_distance(
+                lat, lon, mountain_width
+            )
             tectonic_index_1 = self._tectonic_map[point_key_1]
             conflict_height_delta = 0
             for point2 in nearest_points:
@@ -372,20 +409,31 @@ polar	tundra	tundra	tundra	taiga	taiga	plains	steppe	steppe	steppe	steppe	steppe
 
                 # вычисляем конфликт векторов AB и CD
                 point_a: tuple[float, float] = point_key_1
-                vector1: tuple[float, float] = tectonic_movement[tectonic_index_1]
+                vector1: tuple[float, float] = tectonic_movement[
+                    tectonic_index_1
+                ]
                 point_b = self._haversine_move(*point_a, *vector1)
 
                 point_c: tuple[float, float] = point_key_2
-                vector2: tuple[float, float] = tectonic_movement[tectonic_index_2]
+                vector2: tuple[float, float] = tectonic_movement[
+                    tectonic_index_2
+                ]
                 point_d = self._haversine_move(*point_c, *vector2)
 
-                conflict = self._calculate_vector_conflict(point_a, point_b, point_c, point_d)
+                conflict = self._calculate_vector_conflict(
+                    point_a, point_b, point_c, point_d
+                )
 
-                if tectonic_index_1 in oceanic_plates and tectonic_index_2 in oceanic_plates:
+                if (
+                    tectonic_index_1 in oceanic_plates
+                    and tectonic_index_2 in oceanic_plates
+                ):
                     k = height_data["oceanic_tectonic_conflict_coefficient"]
                 else:
                     k = height_data["tectonic_conflict_coefficient"]
-                conflict_height_delta += conflict / (2 * height_data["max_tectonic_speed"]) * k
+                conflict_height_delta += (
+                    conflict / (2 * height_data["max_tectonic_speed"]) * k
+                )
             self._height_map[point_key_1] += conflict_height_delta
 
     def _draw_tectonic_borders(self):
@@ -393,7 +441,9 @@ polar	tundra	tundra	tundra	taiga	taiga	plains	steppe	steppe	steppe	steppe	steppe
             point_key = tuple(point.tolist())
             tectonic_index = self._height_map[point_key]
             lat, lon = point
-            nearest_points = self._find_nearest_points_by_distance(lat, lon, 1.1 / self._radius)
+            nearest_points = self._find_nearest_points_by_distance(
+                lat, lon, 1.1 / self._radius
+            )
             for point2 in nearest_points:
                 x1, y1 = point
                 x2, y2 = point2
@@ -419,7 +469,8 @@ polar	tundra	tundra	tundra	taiga	taiga	plains	steppe	steppe	steppe	steppe	steppe
 
         # генерируем шум
         noise_map = self._generate_perlin_noise(
-            heat_data["heat_noise_octaves"], heat_data["heat_noise_coefficients"]
+            heat_data["heat_noise_octaves"],
+            heat_data["heat_noise_coefficients"],
         )
 
         # нормализуем шум
@@ -450,7 +501,9 @@ polar	tundra	tundra	tundra	taiga	taiga	plains	steppe	steppe	steppe	steppe	steppe
                 + np.cos(heat_data["heat_tilt_angle"]) * z1
             )
             effective_lat = np.arcsin(z2)
-            self._heat_map[point_key] += np.cos(effective_lat) + heat_data["heat_delta"]
+            self._heat_map[point_key] += (
+                np.cos(effective_lat) + heat_data["heat_delta"]
+            )
         self._heat_map = self._normalize_map_by_min_max(
             self._heat_map, heat_data["min_temp"], heat_data["max_temp"]
         )
@@ -462,7 +515,9 @@ polar	tundra	tundra	tundra	taiga	taiga	plains	steppe	steppe	steppe	steppe	steppe
             point_key = tuple(point.tolist())
             height = self._height_map[point_key]
             if height > water_level:
-                self._heat_map[point_key] -= (height - water_level) * heat_data["altitude_heat_k"]
+                self._heat_map[point_key] -= (height - water_level) * heat_data[
+                    "altitude_heat_k"
+                ]
 
         self._heat_map = self._normalize_map_by_min_max(
             self._heat_map, heat_data["min_temp"], heat_data["max_temp"]
@@ -475,7 +530,9 @@ polar	tundra	tundra	tundra	taiga	taiga	plains	steppe	steppe	steppe	steppe	steppe
         self._add_latitude_delta_to_precipitation_map()
         self._add_height_delta_to_precipitation_map()
 
-        logging.info(f"Генерация карты осадков: {time.time() - start_time:.2f}с")
+        logging.info(
+            f"Генерация карты осадков: {time.time() - start_time:.2f}с"
+        )
 
     def _generate_precipitation_noise(self):
         precipitation_data = self.data["generation"]["precipitation"]
@@ -535,15 +592,16 @@ polar	tundra	tundra	tundra	taiga	taiga	plains	steppe	steppe	steppe	steppe	steppe
             if (
                 water_level
                 < height
-                < water_level + precipitation_data["precipitation_increase_level"]
+                < water_level
+                + precipitation_data["precipitation_increase_level"]
             ):
                 self._precipitation_map[point_key] += precipitation_data[
                     "water_precipitation_increase"
                 ]
             elif height > water_level:
-                self._precipitation_map[point_key] += (height - water_level) * precipitation_data[
-                    "altitude_precipitation_k"
-                ]
+                self._precipitation_map[point_key] += (
+                    height - water_level
+                ) * precipitation_data["altitude_precipitation_k"]
         self._precipitation_map = self._normalize_map_by_min_max(
             self._precipitation_map,
             precipitation_data["min_precipitation"],
@@ -551,7 +609,9 @@ polar	tundra	tundra	tundra	taiga	taiga	plains	steppe	steppe	steppe	steppe	steppe
         )
 
     @staticmethod
-    def _generate_perlin_noise_static(points, octaves: list[float], coefficients: list[float]):
+    def _generate_perlin_noise_static(
+        points, octaves: list[float], coefficients: list[float]
+    ):
         noise_map = {}
 
         for point in points:
@@ -568,8 +628,12 @@ polar	tundra	tundra	tundra	taiga	taiga	plains	steppe	steppe	steppe	steppe	steppe
 
         return noise_map
 
-    def _generate_perlin_noise(self, octaves: list[float], coefficients: list[float]):
-        return self._generate_perlin_noise_static(self._points, octaves, coefficients)
+    def _generate_perlin_noise(
+        self, octaves: list[float], coefficients: list[float]
+    ):
+        return self._generate_perlin_noise_static(
+            self._points, octaves, coefficients
+        )
 
     def _generate_biome_map(self, *_):
         for point in self._points:
@@ -680,7 +744,9 @@ polar	tundra	tundra	tundra	taiga	taiga	plains	steppe	steppe	steppe	steppe	steppe
                 colors[point_key] = biome_colors[biome]
                 continue
             hue, saturation, value = biome_hsv[biome]
-            r, g, b = colorsys.hsv_to_rgb(hue / 360, saturation / 100, value / 100)
+            r, g, b = colorsys.hsv_to_rgb(
+                hue / 360, saturation / 100, value / 100
+            )
             if point_key in self._borders:
                 r /= 3
                 g /= 3
@@ -688,6 +754,19 @@ polar	tundra	tundra	tundra	taiga	taiga	plains	steppe	steppe	steppe	steppe	steppe
             color = int(r * 255), int(g * 255), int(b * 255)
             colors[point_key] = color
         return colors
+
+    def generate_character(self, character_data) -> Character:
+        # Вызывать промпты для генерации недостающих описаний ТОЖЕ здесь, а не внутри персонажа
+        random_points = random.shuffle(self._point_map.tolist())
+        gen = character_data["generation"]
+        char_biome = gen["biome"]
+        for point in random_points:
+            point_key = tuple(point.tolist())
+            biome = self._biome_map[point_key]
+            if biome == char_biome:
+                character_data["location_id"] = self._location_map[point_key]
+                break
+        return Character(character_data)
 
     # endregion Методы генерации
 
@@ -726,7 +805,9 @@ polar	tundra	tundra	tundra	taiga	taiga	plains	steppe	steppe	steppe	steppe	steppe
         return np.cos(angle_a) * d_ab + np.cos(angle_c) * d_cd
 
     @staticmethod
-    def _normalize_map_by_min_max(point_map, min_value: float, max_value: float):
+    def _normalize_map_by_min_max(
+        point_map, min_value: float, max_value: float
+    ):
         k = max_value - min_value
         d = (min_value + max_value) / k
         return Planet._normalize_map(point_map, k, d)
@@ -765,7 +846,9 @@ polar	tundra	tundra	tundra	taiga	taiga	plains	steppe	steppe	steppe	steppe	steppe
     def _relaxate_points(points, iterations=100, step_size=0.01, min_dist=1e-6):
         n = points.shape[0]
         # Convert all points to Cartesian coordinates
-        coords = np.array([Planet._spherical_to_cartesian(lat, lon) for lat, lon in points])
+        coords = np.array(
+            [Planet._spherical_to_cartesian(lat, lon) for lat, lon in points]
+        )
 
         # Iteratively adjust points by repulsion forces
         for _ in range(iterations):
@@ -786,14 +869,20 @@ polar	tundra	tundra	tundra	taiga	taiga	plains	steppe	steppe	steppe	steppe	steppe
     def _haversine_distance(lat1, lon1, lat2, lon2):
         dlat = lat2 - lat1
         dlon = lon2 - lon1
-        a = np.sin(dlat / 2) ** 2 + np.cos(lat1) * np.cos(lat2) * np.sin(dlon / 2) ** 2
+        a = (
+            np.sin(dlat / 2) ** 2
+            + np.cos(lat1) * np.cos(lat2) * np.sin(dlon / 2) ** 2
+        )
         return 2 * np.arcsin(np.sqrt(a))
 
     @staticmethod
-    def _haversine_move(latitude: float, longitude: float, bearing: float, distance: float):
+    def _haversine_move(
+        latitude: float, longitude: float, bearing: float, distance: float
+    ):
         d_by_r = distance
         new_lat = np.arcsin(
-            np.sin(latitude) * np.cos(d_by_r) + np.cos(latitude) * np.sin(d_by_r) * np.cos(bearing)
+            np.sin(latitude) * np.cos(d_by_r)
+            + np.cos(latitude) * np.sin(d_by_r) * np.cos(bearing)
         )
         new_lon = longitude + np.arctan2(
             np.sin(bearing) * np.sin(d_by_r) * np.cos(latitude),
@@ -814,10 +903,14 @@ polar	tundra	tundra	tundra	taiga	taiga	plains	steppe	steppe	steppe	steppe	steppe
     def _move_and_find_next_point(
         self, latitude, longitude, bearing, distance
     ):  # distance in radians
-        lat2, lon2 = self._haversine_move(latitude, longitude, bearing, distance)
+        lat2, lon2 = self._haversine_move(
+            latitude, longitude, bearing, distance
+        )
 
         query_point = [[lat2, lon2]]
-        _, indices = self._tree.query(query_point, k=2)  # Get two closest points
+        _, indices = self._tree.query(
+            query_point, k=2
+        )  # Get two closest points
         if indices[0][0] == self._find_nearest_point_index(latitude, longitude):
             return self._points[
                 indices[0][1]
@@ -825,25 +918,32 @@ polar	tundra	tundra	tundra	taiga	taiga	plains	steppe	steppe	steppe	steppe	steppe
         return self._points[indices[0][0]]
 
     @staticmethod
-    def _find_nearest_points_index_static(latitude: float, longitude: float, tree: BallTree, k=1):
+    def _find_nearest_points_index_static(
+        latitude: float, longitude: float, tree: BallTree, k=1
+    ):
         query_point = [[latitude, longitude]]
         return tree.query(query_point, k=k, return_distance=False)[0]
 
     def _find_nearest_point_index(self, latitude, longitude):
-        return self._find_nearest_points_index_static(latitude, longitude, self._tree, k=1)[0]
+        return self._find_nearest_points_index_static(
+            latitude, longitude, self._tree, k=1
+        )[0]
 
     def _find_nearest_point(self, latitude, longitude):
         return self._points[self._find_nearest_point_index(latitude, longitude)]
 
     @staticmethod
-    def _get_direction(point1: tuple[float, float], point2: tuple[float, float]):
+    def _get_direction(
+        point1: tuple[float, float], point2: tuple[float, float]
+    ):
         lat1, lon1, lat2, lon2 = point1, point2
         lat1, lon1, lat2, lon2 = map(np.radians, [lat1, lon1, lat2, lon2])
         delta_lon = lon2 - lon1
 
         return np.atan2(
             np.sin(delta_lon) * np.cos(lat2),
-            np.cos(lat1) * np.sin(lat2) - np.sin(lat1) * np.cos(lat2) * np.cos(delta_lon),
+            np.cos(lat1) * np.sin(lat2)
+            - np.sin(lat1) * np.cos(lat2) * np.cos(delta_lon),
         )
 
     @staticmethod
@@ -856,12 +956,19 @@ polar	tundra	tundra	tundra	taiga	taiga	plains	steppe	steppe	steppe	steppe	steppe
 
     # region Методы нейросферы
 
-    def find_accesible_location_ids(self, location_id: int, distance: float) -> tuple[int, ...]:
+    def find_accesible_location_ids(
+        self, location_id: int, distance: float
+    ) -> tuple[int, ...]:
         point_key = self._point_map[location_id]
         accessible_point_keys = self._find_nearest_points_by_distance(
             point_key[0], point_key[1], distance
         )
-        return tuple([self._location_map[point_key] for point_key in accessible_point_keys])
+        return tuple(
+            [
+                self._location_map[point_key]
+                for point_key in accessible_point_keys
+            ]
+        )
 
     def get_accessible_location_description(self, location: Location) -> str:
         pass

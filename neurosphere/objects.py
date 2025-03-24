@@ -6,38 +6,60 @@ import random
 
 
 class Essence:
-    def __init__(self, data):
+    def __init__(self, data: dict):
         self.data: dict = data
 
     def get_data(self, *names):
+        """По возможности не использовать"""
         data = self.data
         for name in names:
             data = data[name]
         return data
 
+    def get_id(self) -> int:
+        return self.data["id"]
+
+    def set_id(self, new_id: int) -> None:
+        self.data["id"] = new_id
+
 
 class Location(Essence):
-    def __init__(self, data):
+    def __init__(self, data: dict):
         super().__init__(data)
+        self.characters: list[int] = self.data["references"]["characters"]
 
     def get_world_id(self):
         return self.data["world_id"]
 
+    def add_character_id(self, char_id: int) -> None:
+        if char_id in self.characters:
+            logging.error("Два одинаковых персонажа на одной локации")
+        self.characters.append(char_id)
+
+    def remove_character_id(self, char_id: int) -> None:
+        if char_id not in self.characters:
+            logging.error("Попытка удалить пероснажа из локации, где его нет")
+        self.characters.remove(char_id)
+
 
 class Item(Essence):
-    def __init__(self, data):
+    def __init__(self, data: dict):
         super().__init__(data)
 
 
 class Character(Essence):
-    def __init__(self, data):
+    def __init__(self, data: dict):
         super().__init__(data)
 
     def get_location_id(self) -> int:
         return self.data["location_id"]
 
-    def get_ai_level(self) -> int:
-        return self.data["ai_level"]
+    def get_soul_level(self) -> int:
+        """0 - Игрок. 1 - Первостепенный ИИ. 2 - Второстепенный ИИ. 3 - Третьестепенный ИИ."""
+        return self.data["soul_level"]
+
+    def set_soul(self, soul: bool) -> None:
+        self.data["soul"] = soul
 
 
 class World(Essence):
@@ -55,6 +77,14 @@ class World(Essence):
     def get_location_description(self, location: Location) -> str:  # noqa
         """Должен давать строку с описанием локации для данного мира."""
         logging.error("Метод generate_locations не реализован")
+
+    def generate_character(self, character_data: dict) -> Character:  # noqa
+        """Должен полностью генерировать персонажа для данного мира."""
+        logging.error("Метод generate_character не реализован")
+
+    def generate_character_items(self, character: Character) -> list[Item]:  # noqa
+        """Должен генерировать вещи персонажа для данного мира."""
+        logging.error("Метод generate_character_items не реализован")
 
 
 def generate_pleasant_color() -> tuple[int, int, int]:

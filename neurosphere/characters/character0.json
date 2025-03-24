@@ -1,6 +1,11 @@
 {
   "id": null,
-  "ai_level": 0,
+  "soul": false,
+  "soul_level": 0,
   "location_id": 0,
-  "user_id": null
+  "generation": {
+    "world_id": 0,
+
+    "biome": "plains"
+  }
 }
