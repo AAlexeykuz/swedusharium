@@ -6,7 +6,7 @@ import disnake
 from disnake.ext import commands
 from g4f.client import Client
 
-from constants import GUILD_IDS
+from constants import GUILD_IDS, OWNERS
 
 MODEL = "o3-mini"
 
@@ -40,7 +40,9 @@ class Snake:
             "snake": ":green_square:",
             "apple": ":apple:",
         }
-        output = "\n".join(["".join([emojis[i] for i in line]) for line in self.field])
+        output = "\n".join(
+            ["".join([emojis[i] for i in line]) for line in self.field]
+        )
         return (
             output
             + f"\n-# Яблок собрано {self.apples_collected}\n-# Генерация {self.generation_time}с\n-# {MODEL}"
@@ -138,7 +140,9 @@ class Snake:
             "Your goal is to output an array of commands that makes the snake get the apple and not to lose.\n"
             "You will lose if you will hit a wall (try to leave 0-9 coordinates) or hit your part.\n"
             "Points are (x, y).\n"
-            "Here's information available to you:\n\n" + self.get_vision_gpt() + "\n\n"
+            "Here's information available to you:\n\n"
+            + self.get_vision_gpt()
+            + "\n\n"
             "You should write each command starting from a new line consecutively and nothing else.\n"
         )
         self.generation_time = time.time()
@@ -179,8 +183,15 @@ class SnakeCog(commands.Cog):
         self.bot = bot
         self.games = {}
 
-    @commands.slash_command(name="snake", description="gpt играет в змейку", guild_ids=GUILD_IDS)
+    @commands.slash_command(
+        name="snake", description="gpt играет в змейку", guild_ids=GUILD_IDS
+    )
     async def snake(self, inter: disnake.ApplicationCommandInteraction):
+        if inter.author.id not in OWNERS:
+            await inter.response.send_message(
+                "Вы не можете использовать эту команду", ephemeral=True
+            )
+            return
         await inter.response.send_message("Начало", ephemeral=True)
         game = Snake()
         self.games[inter.channel.id] = game
