@@ -213,7 +213,7 @@ class NeurosphereCog(commands.Cog):
                 "Нейросфера не запущена.", ephemeral=True
             )
             return
-        # TODO добавить
+        # TODO реализовать
 
     @commands.Cog.listener()
     async def on_message(self, message: disnake.Message):
