@@ -1,10 +1,5 @@
-import asyncio
-import time
 import disnake
 from disnake.ext import commands
-from g4f.client import Client
-from constants import GUILD_IDS
-
 
 MODERATED_SERVERS = [955168680474443777]
 
