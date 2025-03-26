@@ -10,6 +10,8 @@ BLUE = disnake.ButtonStyle.primary
 GRAY = disnake.ButtonStyle.secondary
 GREEN = disnake.ButtonStyle.success
 RED = disnake.ButtonStyle.danger
+OWNERS = [393779108708089856]
+
 
 # swedusharium constants
 MESSAGES = {
@@ -19,7 +21,9 @@ MESSAGES = {
     },
     "welcome": {
         "content": "https://images-ext-1.discordapp.net/external/2RvhWttulwcpeTPXh33P32VFA523JxWkiEFX0Kwai_4/https/i.gifer.com/origin/3c/3c82e43002a5c632edebf76eadc6499a_w200.webp?animated=true",
-        "components": [Button(emoji="🌟", custom_id="verification_send", style=GREEN)],
+        "components": [
+            Button(emoji="🌟", custom_id="verification_send", style=GREEN)
+        ],
     },
 }
 
