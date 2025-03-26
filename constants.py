@@ -10,7 +10,7 @@ BLUE = disnake.ButtonStyle.primary
 GRAY = disnake.ButtonStyle.secondary
 GREEN = disnake.ButtonStyle.success
 RED = disnake.ButtonStyle.danger
-OWNERS = [393779108708089856]
+OWNERS = [393779108708089856, 972186190805614602]
 
 
 # swedusharium constants
