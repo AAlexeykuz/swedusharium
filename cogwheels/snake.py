@@ -8,7 +8,7 @@ from g4f.client import Client
 
 from constants import GUILD_IDS, OWNERS
 
-MODEL = "o3-mini"
+MODEL = "deepseek-r1"
 
 
 class Snake:
@@ -152,7 +152,7 @@ class Snake:
             web_search=False,
         )
         self.generation_time = round(time.time() - self.generation_time, 2)
-        text = response.choices[0].message.content
+        text: str = response.choices[0].message.content
         for line in text.split("\n"):
             if line.startswith("-y"):
                 self.direction = 0
