@@ -6,8 +6,8 @@ from g4f.client import Client
 
 from constants import GUILD_IDS
 
-# MODEL = "o3-mini"
-MODEL = "gpt-4o-mini"
+MODEL = "o3-mini"
+# MODEL = "gpt-4o-mini"
 
 
 class InputModal(disnake.ui.Modal):
@@ -44,7 +44,7 @@ class TranslationCog(commands.Cog):
         self,
         inter: disnake.ApplicationCommandInteraction,
         target_language: str,
-        message_number: int = 30,
+        message_number: int = 40,
     ):
         if message_number < 1 or message_number > 150:
             inter.response.send_message("Too many messages", ephemeral=True)

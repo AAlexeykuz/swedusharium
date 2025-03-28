@@ -1,3 +1,4 @@
+import functools
 import os
 
 import disnake
@@ -45,3 +46,21 @@ def register(member: disnake.Member):
         file.write("")
     with open(f"{path}/channel.txt", "w", encoding="utf-8") as file:
         file.write("")
+
+
+def owner_only():
+    def decorator(func):
+        @functools.wraps(func)
+        async def wrapper(
+            self, inter: disnake.ApplicationCommandInteraction, *args, **kwargs
+        ):
+            if inter.author.id not in OWNERS:
+                await inter.response.send_message(
+                    "Вы не можете использовать эту команду.", ephemeral=True
+                )
+                return None
+            return await func(self, inter, *args, **kwargs)
+
+        return wrapper
+
+    return decorator

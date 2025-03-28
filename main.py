@@ -33,7 +33,9 @@ async def on_message(message: disnake.Message):
     user_message: str = message.content
     channel: str = str(message.channel)
     if message.guild:
-        logging.info(f"[{message.guild}] <{channel}> {username}: {user_message}")
+        logging.info(
+            f"[{message.guild}] <{channel}> {username}: {user_message}"
+        )
     else:
         logging.info(f"<!NEW DM!> {username}: {user_message}")
 
