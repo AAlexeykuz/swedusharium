@@ -8,6 +8,7 @@ from constants import GUILD_IDS
 
 MODEL = "o3-mini"
 # MODEL = "gpt-4o-mini"
+CLIENT = Client()
 
 
 class InputModal(disnake.ui.Modal):
@@ -30,14 +31,30 @@ class InputModal(disnake.ui.Modal):
         await self.callback_func(interaction, user_input)
 
 
+class Filter:
+    def __init__(self, prompt: str, client: Client):
+        self.prompts: list[str] = [prompt]
+        self.client: Client = client
+
+    def filter(self, message: , messages) -> str:
+        prompt = """You're a translation/filter AI. """
+        response = CLIENT.chat.completions.create(
+            model=MODEL,
+            messages=[{"role": "system", "content": prompt}],
+            web_search=False,
+        )
+        return response.choices[0].message.content
+
+
 class TranslationCog(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.client = Client()
+        self.filters: dict[int, Filter] = {}
 
     @commands.slash_command(
         name="translate-chat",
-        description="перевод чата с помощью новейших технологий",
+        description="Translate last messages in chat with AI! "
+        "Your main purpose is to change messages of users as given by the prompt",
         guild_ids=GUILD_IDS,
     )
     async def command(
@@ -95,7 +112,7 @@ class TranslationCog(commands.Cog):
                 f"\n\n"
                 f"{combined_text}"
             )
-            response = self.client.chat.completions.create(
+            response = CLIENT.chat.completions.create(
                 model=MODEL,
                 messages=[{"role": "system", "content": prompt}],
                 web_search=False,
@@ -149,7 +166,7 @@ class TranslationCog(commands.Cog):
                 f"\n\n"
                 f"{user_input}"
             )
-            response = self.client.chat.completions.create(
+            response = CLIENT.chat.completions.create(
                 model=MODEL,
                 messages=[{"role": "system", "content": prompt}],
                 web_search=False,
@@ -172,6 +189,28 @@ class TranslationCog(commands.Cog):
             callback_func=process_input,
         )
         await inter.response.send_modal(modal)
+
+    @commands.slash_command(
+        name="add-filter",
+        description="Change the way you speak!",
+        guild_ids=GUILD_IDS,
+    )
+    async def add_filter(
+        self,
+        inter: disnake.ApplicationCommandInteraction,
+        user: disnake.User,
+        prompt: str,
+    ):
+        # TODO Сделать так же Gemini API версию
+        pass
+
+    @commands.Cog.listener()
+    async def on_message(self, message: disnake.Message):
+        if message.author.id not in self.filters:
+            return
+        filter = self.filters[message.author.id]
+        messages = [i async for i in message.channel.history(limit=10)]
+        filter.filter(message, messages)
 
 
 def setup(bot):
