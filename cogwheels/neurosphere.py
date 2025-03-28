@@ -180,6 +180,9 @@ class Neurosphere:
     # endregion Actions
 
 
+# TODO переименовать soul -> active, load -> write,
+
+
 class NeurosphereCog(commands.Cog):
     def __init__(self, bot):
         self.bot = bot

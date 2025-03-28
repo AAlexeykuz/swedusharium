@@ -5,3 +5,5 @@ g4f
 scikit-learn
 dotenv
 matplotlib
+curl_cffi
+anyio

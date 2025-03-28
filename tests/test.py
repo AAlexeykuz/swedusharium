@@ -2,8 +2,9 @@ import asyncio
 
 import g4f
 import g4f.Provider
+import g4f.providers
 
-_providers = [
+providers = [
     g4f.Provider.DDG,
     g4f.Provider.Blackbox,
     g4f.Provider.ChatGptEs,
@@ -20,6 +21,15 @@ _providers = [
 #     best_provider = IterListProvider([DDG, Blackbox, ChatGptEs, TypeGPT, PollinationsAI, OIVSCode, Liaobots, Jmuz, OpenaiChat])
 # )
 
+best_providers = {
+    "4o-mini": (
+        g4f.Provider.ChatGptEs,
+        g4f.Provider.PollinationsAI,
+        g4f.Provider.Blackbox,
+        g4f.Provider.OIVSCode,
+    )
+}
+
 
 async def run_provider(provider: g4f.Provider.BaseProvider):
     try:
@@ -34,7 +44,7 @@ async def run_provider(provider: g4f.Provider.BaseProvider):
 
 
 async def run_all():
-    calls = [run_provider(provider) for provider in _providers]
+    calls = [run_provider(provider) for provider in providers]
     await asyncio.gather(*calls)
 
 

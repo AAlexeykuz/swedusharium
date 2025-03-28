@@ -3,3 +3,5 @@ __pycache__/
 .env
 other files/
 har_and_cookies/
+other_files/1984/messages.json
+read_messages.py
