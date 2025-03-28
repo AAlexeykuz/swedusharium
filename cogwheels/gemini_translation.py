@@ -152,7 +152,7 @@ class TranslationCog(commands.Cog):
             )
             response = model.generate_content(prompt)
             translated_text = response.text
-            if len(translated_text) > 2000:
+            if len(translated_text) > 1900:
                 file_obj = StringIO(translated_text)
                 file = disnake.File(fp=file_obj, filename="output.txt")
                 await interaction.response.send_message(
