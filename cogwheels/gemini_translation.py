@@ -62,14 +62,14 @@ class TranslationCog(commands.Cog):
                 for message in messages
                 if message.content and not message.author.bot
             ][::-1]
-            for i, message in enumerate(messages_content):
-                if len(message) > 1000:
-                    messages_content[i] = (
-                        message.split(":", 1)[0]
-                        + ": Message is too big for translating"
-                    )
-            if sum(len(i) for i in messages_content) > 1500:
-                raise Exception("Too much text")
+            # for i, message in enumerate(messages_content):
+            #     if len(message) > 1000:
+            #         messages_content[i] = (
+            #             message.split(":", 1)[0]
+            #             + ": Message is too big for translating"
+            #         )
+            # if sum(len(i) for i in messages_content) > 1500:
+            #     raise Exception("Too much text")
             if not messages_content:
                 raise Exception("Messages not found")
 

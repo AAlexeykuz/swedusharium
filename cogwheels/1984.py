@@ -25,7 +25,7 @@ def message_dict(message: disnake.Message) -> dict[str]:
 
 class BigBrother:
     def __init__(self):
-        self.active: bool = False
+        self.active: bool = True
 
         self._messages_path: str = "other_files/1984/messages.json"
         self._client: Client = Client()

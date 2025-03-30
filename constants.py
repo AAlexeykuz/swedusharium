@@ -5,7 +5,7 @@ import disnake
 from disnake.ui import Button
 
 # general constants
-GUILD_IDS = [1324774187583410249, 955168680474443777]
+GUILD_IDS = [1324774187583410249, 955168680474443777, 1355545257210675384]
 SWEDUSHARIUM_ID = GUILD_IDS[0]
 # disnake constants
 BLUE = disnake.ButtonStyle.primary
