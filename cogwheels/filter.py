@@ -11,7 +11,7 @@ from disnake.ext import commands
 from dotenv import load_dotenv
 from g4f import Client, models
 
-from constants import GUILD_IDS
+from constants import GUILD_IDS, OWNERS, owner_only
 
 load_dotenv()
 genai.configure(api_key=getenv("GOOGLE_API_KEY"))
@@ -90,6 +90,7 @@ Leave any discord mentions UNCHANGED (strings <@123123> should be left unchanged
 Leave any discord emojis UNCHANGED (strings like :kuz_offline: or :apple_1: should be left unchanged).
 Links and other technical strings alike also should be left unchanged.
 
+If a word marked with "*" star in the text you shouldn't change it.
 
 Output:
 Present your final transformed messages as a single string that represents a Python list of strings. Each entry in the list should correspond to one transformed message. Ensure the output is a valid Python list literal.
@@ -102,7 +103,7 @@ Target Messages:
 {"\n".join(f"{i.replace('"', "'")}" for i in messages)}
 Target Messages end.
 
-User Message History:
+User Message History (without transformations):
 {"\n".join(f"{i.replace('"', "'")}" for i in self._context)}
 User Message History end.
 
@@ -218,10 +219,82 @@ class FilterCog(commands.Cog):
         self.bot = bot
         self.filters: dict[int, Filter] = {}
         self.webhooks_cache = {}
+        self.april_toggle = False
+
+    @commands.slash_command(
+        name="set-toggle",
+        description="setts 1st april toggle",
+        guild_ids=GUILD_IDS,
+    )
+    @owner_only()
+    async def set_toggle(
+        self,
+        inter: disnake.ApplicationCommandInteraction,
+        state: bool,
+    ):
+        self.april_toggle = state
+        await inter.response.send_message("Успех", ephemeral=True)
+
+    @commands.slash_command(
+        name="set-server-filter",
+        description="Applies filter to everyone in the server",
+        guild_ids=GUILD_IDS,
+    )
+    async def set_server_filter(
+        self,
+        inter: disnake.ApplicationCommandInteraction,
+        prompt: str,
+    ):
+        if not inter.author.guild_permissions.administrator:
+            await inter.response.send_message(
+                "You don't have permission to use this command."
+            )
+            return
+
+        if (inter.author.id not in OWNERS) and self.april_toggle:
+            await inter.response.send_message(
+                "You don't have permission to use this command."
+            )
+            return
+
+        for member in inter.guild.members:
+            if member.bot:
+                continue
+            filter_ = Filter(prompt)
+            self.filters[member.id] = filter_
+        await inter.response.send_message(
+            "Filter has been applied to everyone on the server."
+        )
+
+    @commands.slash_command(
+        name="remove-server-filter",
+        description="Removes filter from everyone in the server",
+        guild_ids=GUILD_IDS,
+    )
+    async def remove_server_filter(
+        self,
+        inter: disnake.ApplicationCommandInteraction,
+    ):
+        if not inter.author.guild_permissions.administrator:
+            await inter.response.send_message(
+                "You don't have permission to use this command."
+            )
+            return
+
+        if (inter.author.id not in OWNERS) and self.april_toggle:
+            await inter.response.send_message(
+                "You don't have permission to use this command."
+            )
+            return
+
+        self.filters = {}
+        await inter.response.send_message(
+            "Filter has been removed from everyone in the server."
+        )
 
     @commands.slash_command(
         name="set-filter",
-        description="Applies a filter on a user",
+        description="Applies filter to a user",
         guild_ids=GUILD_IDS,
     )
     async def set_filter(
@@ -232,13 +305,28 @@ class FilterCog(commands.Cog):
     ):
         if member.bot:
             await inter.response.send_message(
-                "Filters can't be applied on bots"
+                "Filters can't be applied to bots."
             )
             return
+        if (
+            not inter.author.guild_permissions.administrator
+            and member.id != inter.author.id
+        ):
+            await inter.response.send_message(
+                "You don't have permission to set filters to other people."
+            )
+            return
+
+        if (inter.author.id not in OWNERS) and self.april_toggle:
+            await inter.response.send_message(
+                "You don't have permission to use this command."
+            )
+            return
+
         filter_ = Filter(prompt)
         self.filters[member.id] = filter_
         await inter.response.send_message(
-            f"A filter has been applied to {member.mention}!"
+            f"Filter has been applied to {member.nick}."
         )
 
     @commands.slash_command(
@@ -251,10 +339,25 @@ class FilterCog(commands.Cog):
         inter: disnake.ApplicationCommandInteraction,
         member: disnake.Member,
     ):
+        if (
+            not inter.author.guild_permissions.administrator
+            and member.id != inter.author.id
+        ):
+            await inter.response.send_message(
+                "You don't have permission to remove filters from other people."
+            )
+            return
+
+        if (inter.author.id not in OWNERS) and self.april_toggle:
+            await inter.response.send_message(
+                "You don't have permission to use this command."
+            )
+            return
+
         if member.id in self.filters:
             del self.filters[member.id]
         await inter.response.send_message(
-            f"Filter removed from {member.mention}."
+            f"Filter has been removed from {member.nick}."
         )
 
     async def get_webhook(
@@ -284,15 +387,18 @@ class FilterCog(commands.Cog):
                 if member.avatar
                 else member.default_avatar.url
             )
-            await webhook.send(
-                content=message.content,
-                username=username,
-                avatar_url=avatar_url,
-                components=message.components,
-                files=[
-                    await attachment.to_file()
-                    for attachment in message.attachments
-                ],
+            asyncio.gather(
+                message.delete(),
+                await webhook.send(
+                    content=message.content,
+                    username=username,
+                    avatar_url=avatar_url,
+                    components=message.components,
+                    files=[
+                        await attachment.to_file()
+                        for attachment in message.attachments
+                    ],
+                ),
             )
             return
 
@@ -306,3 +412,7 @@ class FilterCog(commands.Cog):
 
 def setup(bot):
     bot.add_cog(FilterCog(bot))
+
+
+# kawaii filter:
+# make it sound kawaii. make them speak like a teenage anime girl. use kaomojis and emojis. use cute misspellings and typos. DO NOT CHANGE the user's language.
