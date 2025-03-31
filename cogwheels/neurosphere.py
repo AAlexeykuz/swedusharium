@@ -31,6 +31,13 @@ class Neurosphere:
             data = json.load(f)
         self._read_data(data)
 
+    # region Методы симуляции
+
+    def tick(self) -> None:
+        pass
+
+    # endregion Методы симуляции
+
     # region JSON Методы
 
     def _read_data(self, data: dict) -> None:
@@ -100,14 +107,14 @@ class Neurosphere:
         char_id = character.get_id()
         location = self._get_location_by_char_id(char_id)
         location.add_character_id(char_id)
-        character.set_soul(True)
+        character.set_active(True)
 
     def _remove_character(self, character: Character) -> None:
         """Убирает персонажа из нейросферы"""
         char_id = character.get_id()
         location = self._get_location_by_char_id(char_id)
         location.remove_character_id(char_id)
-        character.set_soul(False)
+        character.set_active(False)
 
     def _add_character_id_to_location(self, char_id, location_id):
         location = self._locations[location_id]
@@ -142,7 +149,7 @@ class Neurosphere:
             logging.error("Нельзя контроллировать несуществующего персонажа")
             return False
         char = self._characters[char_id]
-        if char.get_soul_level() != 0:
+        if char.get_ai_level() != 0:
             logging.error(
                 "Нельзя контроллировать персонажа, контролируемого ИИ"
             )
@@ -169,8 +176,7 @@ class Neurosphere:
 
     # region Actions
 
-    def handle_actions(self, char_id: int, actions: list[str]):
-        # TODO сделать собственно
+    def parse_character_input(self, input_string: str) -> list[str]:
         pass
 
     def _action_add_character(self, args: dict):
@@ -178,9 +184,6 @@ class Neurosphere:
         char_id = args["character"]
 
     # endregion Actions
-
-
-# TODO переименовать soul -> active, load -> write,
 
 
 class NeurosphereCog(commands.Cog):

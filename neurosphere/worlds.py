@@ -95,20 +95,20 @@ polar	tundra	tundra	tundra	taiga	taiga	plains	steppe	steppe	steppe	steppe	steppe
         self._location_map = self._read_map("location_map")
         self._point_map = {v: k for k, v in self._location_map.items()}
 
-    def _load_map(self, map_: dict[tuple[float, float]], name: str) -> None:
+    def _write_map(self, map_: dict[tuple[float, float]], name: str) -> None:
         json_map = [
             {"lat": point_key[0], "lon": point_key[1], "value": value}
             for point_key, value in map_.items()
         ]
         self.data["maps"][name] = json_map
 
-    def _load_maps(self) -> None:
-        self._load_map(self._tectonic_map, "tectonic_map")
-        self._load_map(self._height_map, "height_map")
-        self._load_map(self._heat_map, "heat_map")
-        self._load_map(self._precipitation_map, "precipitation_map")
-        self._load_map(self._biome_map, "biome_map")
-        self._load_map(self._location_map, "location_map")
+    def _write_maps(self) -> None:
+        self._write_map(self._tectonic_map, "tectonic_map")
+        self._write_map(self._height_map, "height_map")
+        self._write_map(self._heat_map, "heat_map")
+        self._write_map(self._precipitation_map, "precipitation_map")
+        self._write_map(self._biome_map, "biome_map")
+        self._write_map(self._location_map, "location_map")
 
     @staticmethod
     def _table(biome_string) -> list[list[str]]:

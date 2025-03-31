@@ -54,15 +54,21 @@ class Character(Essence):
     def get_location_id(self) -> int:
         return self.data["location_id"]
 
-    def get_soul_level(self) -> int:
+    def get_ai_level(self) -> int:
         """0 - Игрок. 1 - Первостепенный ИИ. 2 - Второстепенный ИИ. 3 - Третьестепенный ИИ."""
-        return self.data["soul_level"]
+        return self.data["ai_level"]
 
-    def set_soul(self, soul: bool) -> None:
-        self.data["soul"] = soul
+    def set_active(self, active: bool) -> None:
+        self.data["active"] = active
 
-    def get_soul(self) -> bool:
-        return self.data["soul"]
+    def get_active(self) -> bool:
+        return self.data["active"]
+
+
+class Player(Character):
+    def __init__(self, data: dict):
+        super().__init__(data)
+        self._game_message = None
 
 
 class World(Essence):

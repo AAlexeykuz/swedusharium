@@ -80,7 +80,9 @@ def plot_sphere_points(points, colors):
         scatter.set_facecolor(new_color_array)
 
         # Update the title with the current count of visible points.
-        ax.set_title(f"Visible Neurosphere Points ({len(x_vis)} Points)", fontsize=14)
+        ax.set_title(
+            f"Visible Neurosphere Points ({len(x_vis)} Points)", fontsize=14
+        )
         fig.canvas.draw_idle()
 
     # Initially compute visible points.
@@ -103,7 +105,7 @@ def plot_sphere_points(points, colors):
     color_array = np.array(color_list)
 
     # Plot the visible points.
-    scatter = ax.scatter(x_vis, y_vis, z_vis, s=100, c=color_array, alpha=1)
+    scatter = ax.scatter(x_vis, y_vis, z_vis, s=50, c=color_array, alpha=1)
 
     # Draw a wireframe sphere for context.
     u = np.linspace(0, 2 * np.pi, 30)
@@ -139,7 +141,7 @@ if __name__ == "__main__":
     sphere = neurosphere._worlds[0]
     sphere.statistics()
     colors = sphere.generate_colors_by_biomes()
-    fig, ax = plot_sphere_points(sphere.points, colors)
+    fig, ax = plot_sphere_points(sphere._points, colors)
     plt.show()
 
     # precipitation = sphere.generate_precipitation_map(np.deg2rad(0), np.deg2rad(0))

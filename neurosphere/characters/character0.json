@@ -1,7 +1,7 @@
 {
   "id": null,
-  "soul": false,
-  "soul_level": 0,
+  "active": false,
+  "ai_level": 0,
   "location_id": 0,
   "generation": {
     "world_id": 0,
