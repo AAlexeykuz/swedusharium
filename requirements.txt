@@ -7,3 +7,4 @@ dotenv
 matplotlib
 curl_cffi
 anyio
+google-genai
