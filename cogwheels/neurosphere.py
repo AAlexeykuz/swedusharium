@@ -24,6 +24,7 @@ class Neurosphere:
         self._locations: dict[int, Location] = {}
         self._characters: dict[int, Character] = {}
         self._players: dict[int, int] = {}
+        self._game_messages: dict[int, disnake.Message] = {}
         self._time: int = 0
         self._action_handler = None  # TODO сделать действия
 
