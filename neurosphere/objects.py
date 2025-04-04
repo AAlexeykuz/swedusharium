@@ -47,6 +47,17 @@ class Item(Essence):
         super().__init__(data)
 
 
+class Action(Essence):
+    def __init__(self, data: dict):
+        super().__init__(data)
+
+    def get_name(self):
+        return self.data["name"]
+
+    def get_arguments(self):
+        return self.data["arguments"]
+
+
 class Character(Essence):
     def __init__(self, data: dict):
         super().__init__(data)

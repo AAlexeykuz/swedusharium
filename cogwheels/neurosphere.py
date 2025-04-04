@@ -23,7 +23,7 @@ class Neurosphere:
         self._worlds: dict[int, World] = {}
         self._locations: dict[int, Location] = {}
         self._characters: dict[int, Character] = {}
-        self._players: dict[int, int] = {}
+        self._players: dict[int, int] = {}  # user id -> char id
         self._game_messages: dict[int, disnake.Message] = {}
         self._time: int = 0
         self._action_handler = None  # TODO сделать действия
@@ -35,7 +35,8 @@ class Neurosphere:
     # region Методы симуляции
 
     def tick(self) -> None:
-        pass
+        self._time += 1
+        # проитерировать
 
     # endregion Методы симуляции
 
@@ -175,14 +176,23 @@ class Neurosphere:
 
     # endregion Методы информации
 
-    # region Actions
+    # region API
 
-    def parse_character_input(self, input_string: str) -> list[str]:
+    def _parse_input(self, input_: str) -> list[str]:
         pass
 
-    def _action_add_character(self, args: dict):
-        location_id = args["location"]
-        char_id = args["character"]
+    def handle_input(self, input_: str) -> bool:
+        actions = self._parse_input(input_)
+        if not actions:
+            return False
+        # логика
+        return True
+
+    # endregion API
+
+    # region Actions
+
+    # def handle
 
     # endregion Actions
 
@@ -191,9 +201,7 @@ class NeurosphereCog(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.neurosphere: Neurosphere = None
-        self.game_messages: dict[
-            int, disnake.Message
-        ] = {}  # id юзера: сообщение
+        self.game_channels: dict[int, int] = {}  # id юзера: id канала
 
     @commands.slash_command(
         name="neurosphere",
@@ -228,23 +236,27 @@ class NeurosphereCog(commands.Cog):
             return
         if self.neurosphere is None:
             return
+        game_channel_id = self.game_channels[message.author.id]
+        if message.channel.id != game_channel_id:
+            return
+        self.neurosphere.handle_input()
 
-        if message.content.startswith("!go"):
-            try:
-                coords = message.content.strip().split()[1:]
+        # if message.content.startswith("!go"):
+        #     try:
+        #         coords = message.content.strip().split()[1:]
 
-                if len(coords) >= 2:
-                    # обработка координат
-                    await message.channel.send(
-                        f"Найдены координаты для перемещения: {' '.join(coords)}"
-                    )
-                    # тут надо логику
-                else:
-                    await message.channel.send(
-                        "Недостаточно координат. используйте формат: !go {id локации}"
-                    )
-            except Exception:
-                logging.exception("Тестовая ошибка !go")
+        #         if len(coords) >= 2:
+        #             # обработка координат
+        #             await message.channel.send(
+        #                 f"Найдены координаты для перемещения: {' '.join(coords)}"
+        #             )
+        #             # тут надо логику
+        #         else:
+        #             await message.channel.send(
+        #                 "Недостаточно координат. используйте формат: !go {id локации}"
+        #             )
+        #     except Exception:
+        #         logging.exception("Тестовая ошибка !go")
 
 
 def setup(bot):
