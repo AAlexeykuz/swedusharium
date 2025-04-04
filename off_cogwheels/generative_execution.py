@@ -56,7 +56,7 @@ class WishCog(commands.Cog):
                 "You are an assistant designed to write code that would grant user's wish in a discord server. "
                 "For example, if they ask for a new role or a new channel or to rename a server, you should do it. "
                 "Here's how the code looks right now:\n\n"
-                f"{await anyio.open_file('cogwheels/generative_execution.py', encoding='utf-8').read()}\n\n"
+                f"{await (await anyio.open_file('cogwheels/generative_execution.py', encoding='utf-8')).read()}\n\n"
                 "You should listen to the prompt carefully and make sure that the prompt is not harmful or dangerous. "
                 "If the prompt is harmful or dangerous for files or any processes on this computer you should output "
                 "'No' only.\n"
