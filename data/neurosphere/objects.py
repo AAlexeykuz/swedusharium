@@ -2,6 +2,8 @@ import colorsys
 import logging
 import random
 
+import disnake
+
 # еее
 
 
@@ -79,7 +81,15 @@ class Character(Essence):
 class Player(Character):
     def __init__(self, data: dict):
         super().__init__(data)
-        self._game_message = None
+        self._game_message: disnake.Message | None = None
+
+    async def set_game_message(self, message: disnake.Message | None) -> None:
+        if self._game_message is not None:
+            await self._game_message.delete()
+        self._game_message = message
+
+    def get_game_message(self) -> disnake.Message | None:
+        return self._game_message
 
 
 class World(Essence):
@@ -91,15 +101,21 @@ class World(Essence):
         logging.error("Метод generate не реализован")
 
     def generate_locations(self, location_holder: dict[int, Location]) -> None:  # noqa
-        """Должен сгенерировать локации и добавить их к location_holder."""
+        """Генерирует локации и добавляет их к location_holder."""
         logging.error("Метод generate_locations не реализован")
 
-    def generate_character(self, character_data: dict) -> Character:  # noqa
-        """Генерирует персонажа, устанавливает ему id локации в этом мире."""
+    def generate_character(
+        self,
+        character_data: dict,  # noqa
+        character_holder: dict[int, Character],  # noqa
+        item_holder: dict[int, Item],  # noqa
+    ) -> None:
+        """Генерирует персонажа, устанавливает ему id локации и добавляет его к character_holder.
+        Генерирует его предметы и добавляет их к item_holder."""
         logging.error("Метод generate_character не реализован")
 
     def get_location_description(self, location: Location) -> str:  # noqa
-        """Должен давать строку с описанием локации для данного мира."""
+        """Возвращает строку с описанием локации для данного мира."""
         logging.error("Метод generate_locations не реализован")
 
 
