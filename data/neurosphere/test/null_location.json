@@ -1,0 +1,12 @@
+{
+  "lat": null,
+  "lon": null,
+  "biome": null,
+  "height": null,
+  "space": null,
+  "char_id": [],
+  "life_id": [],
+  "structures": [],
+  "items": [],
+  "underground_items": []
+}

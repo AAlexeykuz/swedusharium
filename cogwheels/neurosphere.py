@@ -1,32 +1,26 @@
 import json
-import logging
 
 import disnake
 from disnake.ext import commands
 
 from constants import GUILD_IDS
-from neurosphere.objects import (
+from data.neurosphere.objects import (
     Character,
     Location,
     World,
     new_id,
 )
-from neurosphere.worlds import Planet
+from data.neurosphere.worlds import Planet
 
 WORLD_TYPES = {"planet": Planet}
 
 
 class Neurosphere:
-    """Нейросфера - название симуляции генеративных агентов. Не обязательно происходит на сфере."""
-
-    def __init__(self, file_path="neurosphere/neurospheres/neurosphere0.json"):
+    def __init__(self, file_path="data/neurosphere/neurospheres/neurosphere0.json"):
         self._worlds: dict[int, World] = {}
         self._locations: dict[int, Location] = {}
         self._characters: dict[int, Character] = {}
-        self._players: dict[int, int] = {}  # user id -> char id
-        self._game_messages: dict[int, disnake.Message] = {}
         self._time: int = 0
-        self._action_handler = None  # TODO сделать действия
 
         with open(file_path, encoding="utf-8") as f:
             data = json.load(f)
@@ -78,6 +72,8 @@ class Neurosphere:
             self._locations[location_id] = location
 
     def _read_characters(self, data: dict) -> None:
+        """Загружает персонажей в self._characters если у них есть айди
+        Если айди нет, то генерирует их через мир и добавляет в локацию"""
         characters = data["characters"]
         not_generated_characters = []
 
@@ -95,32 +91,28 @@ class Neurosphere:
             character_data["id"] = new_id_
             world_id = character_data["generation"]["world_id"]
             world = self._worlds[world_id]
-            character = world.generate_character(character_data)
-            # world.generate_character_items() тоже
+            world.generate_character(character_data)
+            # items = world.generate_character_items() тоже
             self._add_character(character)
-            # self._add_items() тоже
+            # self._add_items(items) тоже
 
     # endregion JSON Методы
 
     # region Методы управления
 
     def _add_character(self, character: Character) -> None:
-        """Добавляет персонажа в нейросферу"""
+        """Включает пероснажа и добавляет его в локацию"""
         char_id = character.get_id()
         location = self._get_location_by_char_id(char_id)
         location.add_character_id(char_id)
         character.set_active(True)
 
     def _remove_character(self, character: Character) -> None:
-        """Убирает персонажа из нейросферы"""
+        """Выключает персонажа и удаляет его из локации"""
         char_id = character.get_id()
         location = self._get_location_by_char_id(char_id)
         location.remove_character_id(char_id)
         character.set_active(False)
-
-    def _add_character_id_to_location(self, char_id, location_id):
-        location = self._locations[location_id]
-        location.add_character_id(char_id)
 
     # endregion
 
@@ -137,42 +129,11 @@ class Neurosphere:
     def _get_world_by_char_id(self, char_id: int) -> World:
         return self._worlds[self._get_world_id_by_char_id(char_id)]
 
-    def _get_world_by_location_id(self, location_id: int) -> World:
-        return self._worlds[self._locations[location_id].get_world_id()]
-
     def _get_location_id_by_char_id(self, char_id: int) -> int:
         return self._characters[char_id].get_location_id()
 
     def _get_location_by_char_id(self, char_id: int) -> Location:
         return self._locations[self._get_location_id_by_char_id(char_id)]
-
-    def is_char_controllable_by_player(self, char_id: int, player_id) -> bool:
-        if char_id not in self._characters:
-            logging.error("Нельзя контроллировать несуществующего персонажа")
-            return False
-        char = self._characters[char_id]
-        if char.get_ai_level() != 0:
-            logging.error(
-                "Нельзя контроллировать персонажа, контролируемого ИИ"
-            )
-            return False
-        return (
-            char_id not in self._players or self._players[char_id] == player_id
-        )
-
-    def get_player_id(self, char_id: int) -> int | None:
-        if char_id in self._players:
-            return self._players[char_id]
-        return None
-
-    def set_player_id(self, char_id, player_id) -> None:
-        self._players[char_id] = player_id
-
-    def get_char_id(self, player_id: int) -> int | None:
-        inverted_players = {v: k for k, v in self._players.items()}
-        if player_id in inverted_players:
-            return inverted_players[player_id]
-        return None
 
     # endregion Методы информации
 
@@ -224,9 +185,7 @@ class NeurosphereCog(commands.Cog):
         self, inter: disnake.ApplicationCommandInteraction, char_id: int
     ) -> None:
         if self.neurosphere is None:
-            await inter.response.send_message(
-                "Нейросфера не запущена.", ephemeral=True
-            )
+            await inter.response.send_message("Нейросфера не запущена.", ephemeral=True)
             return
         # TODO реализовать
 
@@ -240,23 +199,6 @@ class NeurosphereCog(commands.Cog):
         if message.channel.id != game_channel_id:
             return
         self.neurosphere.handle_input()
-
-        # if message.content.startswith("!go"):
-        #     try:
-        #         coords = message.content.strip().split()[1:]
-
-        #         if len(coords) >= 2:
-        #             # обработка координат
-        #             await message.channel.send(
-        #                 f"Найдены координаты для перемещения: {' '.join(coords)}"
-        #             )
-        #             # тут надо логику
-        #         else:
-        #             await message.channel.send(
-        #                 "Недостаточно координат. используйте формат: !go {id локации}"
-        #             )
-        #     except Exception:
-        #         logging.exception("Тестовая ошибка !go")
 
 
 def setup(bot):

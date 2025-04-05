@@ -1,0 +1,10 @@
+{
+  "id": null,
+  "active": false,
+  "ai_level": 0,
+  "location_id": null,
+  "generation": {
+    "world_id": 0,
+    "biome": "plains"
+  }
+}
