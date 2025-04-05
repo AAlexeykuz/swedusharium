@@ -1,8 +1,13 @@
 {
   "id": null,
   "active": false,
-  "ai_level": 0,
   "location_id": null,
+  "controller": {
+    "type": "player",
+    "player_id": null
+  },
+  "actions": [],
+  "possible_actions": [],
   "generation": {
     "world_id": 0,
     "coords": [0, 1.57]

@@ -4,8 +4,6 @@ import random
 
 import disnake
 
-# еее
-
 
 class Essence:
     def __init__(self, data: dict):
@@ -67,9 +65,8 @@ class Character(Essence):
     def get_location_id(self) -> int:
         return self.data["location_id"]
 
-    def get_ai_level(self) -> int:
-        """0 - Игрок. 1 - Первостепенный ИИ. 2 - Второстепенный ИИ. 3 - Третьестепенный ИИ."""
-        return self.data["ai_level"]
+    def get_state(self) -> int:
+        return self.data["state"]
 
     def set_active(self, active: bool) -> None:
         self.data["active"] = active
@@ -78,18 +75,33 @@ class Character(Essence):
         return self.data["active"]
 
 
-class Player(Character):
-    def __init__(self, data: dict):
+class Controller(Essence):
+    def __init__(self, data):
         super().__init__(data)
-        self._game_message: disnake.Message | None = None
+
+    def act(self) -> None:
+        """Вызывается, когда персонажу становится нечего делать."""
+        logging.error("Метод act в Controller не реализован")
+
+    def to_dict(self) -> dict:
+        """Превращает контроллер в словарь для json"""
+        logging.error("Метод to_dict в Controller не реализован")
+
+    @staticmethod
+    def get_player_message() -> str:
+        """Возвращает строку, видимую человеком, если его персонажем управляет этот контроллер"""
+        logging.error("Метод to_dict в Controller не реализован")
+
+
+class PlayerController(Controller):
+    def __init__(self, data) -> None:
+        super().__init__(data)
+        self.game_message: disnake.Message | None = None
 
     async def set_game_message(self, message: disnake.Message | None) -> None:
-        if self._game_message is not None:
-            await self._game_message.delete()
-        self._game_message = message
-
-    def get_game_message(self) -> disnake.Message | None:
-        return self._game_message
+        if self.game_message is not None:
+            await self.game_message.delete()
+        self.game_message = message
 
 
 class World(Essence):
@@ -98,11 +110,11 @@ class World(Essence):
 
     def generate(self) -> None:
         """Генерирует всё, чтобы мир смог сгенерировать карту локаций."""
-        logging.error("Метод generate не реализован")
+        logging.error("Метод generate в World не реализован")
 
     def generate_locations(self, location_holder: dict[int, Location]) -> None:  # noqa
         """Генерирует локации и добавляет их к location_holder."""
-        logging.error("Метод generate_locations не реализован")
+        logging.error("Метод generate_locations в World не реализован")
 
     def generate_character(
         self,
@@ -112,11 +124,11 @@ class World(Essence):
     ) -> None:
         """Генерирует персонажа, устанавливает ему id локации и добавляет его к character_holder.
         Генерирует его предметы и добавляет их к item_holder."""
-        logging.error("Метод generate_character не реализован")
+        logging.error("Метод generate_character в World не реализован")
 
     def get_location_description(self, location: Location) -> str:  # noqa
         """Возвращает строку с описанием локации для данного мира."""
-        logging.error("Метод generate_locations не реализован")
+        logging.error("Метод generate_locations в World не реализован")
 
 
 def generate_pleasant_color() -> tuple[int, int, int]:

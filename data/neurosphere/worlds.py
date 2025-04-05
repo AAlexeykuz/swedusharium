@@ -7,7 +7,7 @@ import noise
 import numpy as np
 from sklearn.neighbors import BallTree
 
-from data.neurosphere.objects import Character, Item, Location, Player, World, new_id
+from data.neurosphere.objects import Character, Item, Location, World, new_id
 
 BIOME_NAMES = {
     "marine": "Marine",
@@ -723,7 +723,7 @@ polar	tundra	tundra	tundra	taiga	taiga	plains	steppe	steppe	steppe	steppe	steppe
     def generate_character(
         self,
         character_data: dict,
-        character_holder: dict[int, Character | Player],
+        character_holder: dict[int, Character],
         item_holder: dict[int, Item],
     ) -> None:
         # Вызывать промпты для генерации недостающих описаний ТОЖЕ здесь, а не внутри персонажа
@@ -731,10 +731,7 @@ polar	tundra	tundra	tundra	taiga	taiga	plains	steppe	steppe	steppe	steppe	steppe
 
         new_id_ = new_id(character_holder)
 
-        if character_data["ai_level"] == 0:
-            character_holder[new_id_] = Player(character_data)
-        else:
-            character_holder[new_id_] = Character(character_data)
+        character_holder[new_id_] = Character(character_data)
 
         # TODO Проитерировать сгенерированные вещи персонажа и добавить их к item_holder
 

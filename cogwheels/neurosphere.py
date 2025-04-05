@@ -6,27 +6,31 @@ from disnake.ext import commands
 from constants import GUILD_IDS
 from data.neurosphere.objects import (
     Character,
+    Controller,
     Item,
     Location,
-    Player,
+    PlayerController,
     World,
     new_id,
 )
 from data.neurosphere.worlds import Planet
 
 WORLD_TYPES = {"planet": Planet}
+CONTROLLER_TYPES = {"player": PlayerController}
 
 
 class Neurosphere:
     def __init__(self, file_path="data/neurosphere/neurospheres/neurosphere0.json"):
         self._worlds: dict[int, World] = {}
         self._locations: dict[int, Location] = {}
-        self._characters: dict[int, Character | Player] = {}
+        self._characters: dict[int, Character] = {}
         self._items: dict[int, Item] = {}
 
-        self._time: int = 0
-
         self._players: dict[int, int] = {}  # user id -> character id
+        self._controllers: dict[int, Controller] = {}  # character id -> controller
+        self._windows: dict[int, disnake.Message] = {}  # character id -> message
+
+        self._time: int = 0
 
         with open(file_path, encoding="utf-8") as f:
             data = json.load(f)
@@ -36,15 +40,16 @@ class Neurosphere:
 
     def tick(self) -> None:
         self._time += 1
-        # проитерировать
+        # TODO Итерация цикла выполнения действий
+        # TODO Итерация цикла получения новых действий
 
     # endregion Методы симуляции
 
     # region JSON Методы
 
     def _read_data(self, data: dict) -> None:
+        self._read_locations(data)  # первыми локации, чтобы id не перезаписывались
         self._read_worlds(data)
-        self._read_locations(data)
         self._read_characters(data)
 
     def _read_worlds(self, data: dict) -> None:
@@ -77,10 +82,7 @@ class Neurosphere:
 
         for character_data in characters:
             if character_data["id"] is not None:
-                if character_data["ai_level"] == 0:
-                    character = Player(character_data)
-                else:
-                    character = Character(character_data)
+                character = Character(character_data)
                 self._characters[character_data["id"]] = character
             else:
                 not_generated_characters.append(character_data)
@@ -103,22 +105,28 @@ class Neurosphere:
 
     def _generate_character(self, character_data) -> None:
         """Генерирует персонажа и добавляет его в Нейросферу"""
-        new_id_ = new_id(self._characters)
-        character_data["id"] = new_id_
+        character_id = new_id(self._characters)
+        character_data["id"] = character_id
         world_id = character_data["generation"]["world_id"]
         world = self._worlds[world_id]
         world.generate_character(character_data, self._characters, self._items)
-        character = self._characters[new_id_]
+        character = self._characters[character_id]
         self._add_character(character)
+        self._generate_controller(character_id, character_data["controller"])
 
-    def _add_character(self, character: Character | Player) -> None:
+    def _generate_controller(self, character_id: int, controller_data) -> None:
+        controller_class = CONTROLLER_TYPES[controller_data["type"]]
+        controller = controller_class(controller_data)
+        self._controllers[character_id] = controller
+
+    def _add_character(self, character: Character) -> None:
         """Включает персонажа и добавляет его в локацию"""
         char_id = character.get_id()
         location = self._get_location_by_character_id(char_id)
         location.add_character_id(char_id)
         character.set_active(True)
 
-    def _remove_character(self, character: Character | Player) -> None:
+    def _remove_character(self, character: Character) -> None:
         """Выключает персонажа и удаляет его из локации"""
         char_id = character.get_id()
         location = self._get_location_by_character_id(char_id)
@@ -127,7 +135,7 @@ class Neurosphere:
 
     def add_player(self, player_id: int) -> None:
         if player_id in self._players:
-            character = self.get_character_by_player_id(player_id)
+            character = self._get_character_by_player_id(player_id)
             self._add_character(character)
             return
         with open("data/neurosphere/characters/player.json", encoding="utf-8") as file:
@@ -137,22 +145,25 @@ class Neurosphere:
 
     # endregion
 
-    # region Методы информации
+    # region Методы отображения
 
-    def get_player_message(self, player_id: int) -> str:
-        """Генерирует полнное сообщение для игрока, основанное на локации, её мире, персонаже и его предметов."""
-        character = self.get_character_by_player_id(player_id)
+    def get_player_embed(self, player_id: int) -> disnake.Embed:
+        """Генерирует Embed для наблюдателя, основанное на локации, её мире, персонаже и его предметах."""
+        character = self._get_character_by_player_id(player_id)
         character_id = character.get_id()
 
         world = self._get_world_by_character_id(character_id)
         location = self._get_location_by_character_id(character_id)
         location_description = world.get_location_description(location)
 
-        return location_description
+        return disnake.Embed(
+            title=f"Персонаж char_{character_id}",
+            description=location_description,
+        )
 
-    def get_ai_message(self, player_id: int) -> str:  # TODO
-        """Генерирует полное сообщение для ИИ, основанное на локации, мире, персонаже и его предметов."""
-        # character = self.get_character_by_player_id(player_id)
+    # endregion методы отображения
+
+    # region Методы информации
 
     def _get_world_id_by_char_id(self, char_id: int) -> int:
         return self._get_location_by_character_id(char_id).get_world_id()
@@ -166,8 +177,11 @@ class Neurosphere:
     def _get_location_by_character_id(self, char_id: int) -> Location:
         return self._locations[self._get_location_id_by_character_id(char_id)]
 
-    def get_character_by_player_id(self, player_id: int) -> Player:
+    def _get_character_by_player_id(self, player_id: int) -> Character:
         return self._characters[self._players[player_id]]
+
+    def get_controller_by_player_id(self, player_id: int) -> Controller:
+        return self._controllers[self._players[player_id]]
 
     # endregion Методы информации
 
@@ -226,10 +240,10 @@ class NeurosphereCog(commands.Cog):
         neurosphere = self.neurosphere
         player_id = inter.author.id
         neurosphere.add_player(player_id)
-        message = neurosphere.get_player_message(player_id)
-        game_message = await inter.channel.send(message)
-        character = neurosphere.get_character_by_player_id(player_id)
-        await character.set_game_message(game_message)
+        embed = neurosphere.get_player_embed(player_id)
+        await inter.channel.send(embed=embed)
+
+        # TODO сделать контроллер
 
     @commands.Cog.listener()
     async def on_message(self, message: disnake.Message):
