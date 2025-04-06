@@ -77,6 +77,18 @@ class Character(Essence):
     def is_busy(self) -> bool:
         return bool(self.data["actions"])
 
+    def get_actions(self) -> list[dict[str]]:
+        return self.data["actions"]
+
+    def set_actions(self, actions: list[dict[str]]) -> None:
+        self.data["actions"] = actions
+
+    def get_possible_actions(self) -> list[dict[str]]:
+        return self.data["possible_actions"]
+
+    def set_possible_actions(self, possible_actions: list[dict[str]]) -> None:
+        self.data["possible_actions"] = possible_actions
+
 
 class Controller(Essence):
     def __init__(self, data):

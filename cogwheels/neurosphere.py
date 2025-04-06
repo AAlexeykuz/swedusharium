@@ -67,16 +67,14 @@ class Neurosphere:
 
     async def tick(self) -> None:
         self._time += 1
-        for character_id in self._characters:
-            character = self._characters[character_id]
-            self._update_actions(character)
-            self._update_possible_actions(character_id)
 
         for character_id in self._characters:
             character = self._characters[character_id]
+            self._update_actions(character)
             if not character.is_busy():
-                controller = self._controllers[character_id]
                 try:
+                    controller = self._controllers[character_id]
+                    self._update_possible_actions(character)
                     controller.update(self)
                 except Exception as e:
                     logging.error(f"Neurosphere controller update error: {e}")
@@ -258,11 +256,13 @@ class Neurosphere:
 
     # region Методы действий
 
-    def _update_actions(self, character_id: int) -> None:
+    def _update_actions(self, character: Character) -> None:
         """Выполняет нужные по времени действия"""
+        # TODO Реализовать
 
-    def _update_possible_actions(self, character_id: int) -> None:
+    def _update_possible_actions(self, character: Character) -> None:
         """Обновляет possible_actions в character data"""
+        # TODO Реализовать
 
     # endregion Методы действий
 
