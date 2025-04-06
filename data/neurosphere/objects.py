@@ -74,26 +74,34 @@ class Character(Essence):
     def get_active(self) -> bool:
         return self.data["active"]
 
+    def is_busy(self) -> bool:
+        return bool(self.data["actions"])
+
 
 class Controller(Essence):
     def __init__(self, data):
         super().__init__(data)
 
-    def act(self) -> None:
-        """Вызывается, когда персонажу становится нечего делать."""
-        logging.error("Метод act в Controller не реализован")
+    def update(self, neurosphere) -> None:  # noqa
+        """Вызывается, когда действия персонажа заканчиваются.
+        Обновляет возможные действия и побуждает управляющего дать новые действия."""
+        logging.error(f"Метод act в {type(self)} не реализован")
 
     def to_dict(self) -> dict:
         """Превращает контроллер в словарь для json"""
-        logging.error("Метод to_dict в Controller не реализован")
+        logging.error(f"Метод to_dict в {type(self)} не реализован")
 
-    @staticmethod
-    def get_player_message() -> str:
-        """Возвращает строку, видимую человеком, если его персонажем управляет этот контроллер"""
-        logging.error("Метод to_dict в Controller не реализован")
+
+class GPTController(Controller):
+    """Контроллер для GPT"""
+
+    def __init__(self, data) -> None:
+        super().__init__(data)
 
 
 class PlayerController(Controller):
+    """Контроллер для людей"""
+
     def __init__(self, data) -> None:
         super().__init__(data)
         self.game_message: disnake.Message | None = None
@@ -110,11 +118,11 @@ class World(Essence):
 
     def generate(self) -> None:
         """Генерирует всё, чтобы мир смог сгенерировать карту локаций."""
-        logging.error("Метод generate в World не реализован")
+        logging.error(f"Метод generate в {type(self)} не реализован")
 
     def generate_locations(self, location_holder: dict[int, Location]) -> None:  # noqa
         """Генерирует локации и добавляет их к location_holder."""
-        logging.error("Метод generate_locations в World не реализован")
+        logging.error(f"Метод generate_locations в {type(self)} не реализован")
 
     def generate_character(
         self,
@@ -124,11 +132,11 @@ class World(Essence):
     ) -> None:
         """Генерирует персонажа, устанавливает ему id локации и добавляет его к character_holder.
         Генерирует его предметы и добавляет их к item_holder."""
-        logging.error("Метод generate_character в World не реализован")
+        logging.error(f"Метод generate_character в {type(self)} не реализован")
 
     def get_location_description(self, location: Location) -> str:  # noqa
         """Возвращает строку с описанием локации для данного мира."""
-        logging.error("Метод generate_locations в World не реализован")
+        logging.error(f"Метод generate_locations в {type(self)} не реализован")
 
 
 def generate_pleasant_color() -> tuple[int, int, int]:
@@ -143,3 +151,21 @@ def new_id(holder: dict) -> int:
     if not holder:
         return 0
     return max(holder.keys()) + 1
+
+
+def embeds_are_equal(embed1: disnake.Embed, embed2: disnake.Embed) -> bool:
+    embed1 = embed1.to_dict()
+    embed2 = embed2.to_dict()
+    for key in embed1:
+        value = embed1[key]
+        if type(value) is str:
+            embed1[key] = value.strip()
+        else:
+            del embed1[key]
+    for key in embed2:
+        value = embed2[key]
+        if type(value) is str:
+            embed2[key] = value.strip()
+        else:
+            del embed2[key]
+    return embed1 == embed2

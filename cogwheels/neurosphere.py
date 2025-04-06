@@ -1,4 +1,7 @@
+import asyncio
+import contextlib
 import json
+import logging
 
 import disnake
 from disnake.ext import commands
@@ -11,16 +14,17 @@ from data.neurosphere.objects import (
     Location,
     PlayerController,
     World,
+    embeds_are_equal,
     new_id,
 )
 from data.neurosphere.worlds import Planet
 
-WORLD_TYPES = {"planet": Planet}
-CONTROLLER_TYPES = {"player": PlayerController}
+WORLD_TYPES: dict[str, type[World]] = {"planet": Planet}
+CONTROLLER_TYPES: dict[str, type[Controller]] = {"player": PlayerController}
 
 
 class Neurosphere:
-    def __init__(self, file_path="data/neurosphere/neurospheres/neurosphere0.json"):
+    def __init__(self, name="neurosphere0"):
         self._worlds: dict[int, World] = {}
         self._locations: dict[int, Location] = {}
         self._characters: dict[int, Character] = {}
@@ -31,17 +35,59 @@ class Neurosphere:
         self._windows: dict[int, disnake.Message] = {}  # character id -> message
 
         self._time: int = 0
+        self._tick_time: float = 1
+        self._tick_task: asyncio.Task | None = None
 
-        with open(file_path, encoding="utf-8") as f:
+        with open(f"data/neurosphere/neurospheres/{name}.json", encoding="utf-8") as f:
             data = json.load(f)
+
         self._read_data(data)
 
     # region Методы симуляции
 
-    def tick(self) -> None:
+    async def start_ticking(self):
+        self._tick_task = asyncio.create_task(self._tick_loop())
+
+    async def _tick_loop(self):
+        try:
+            while True:
+                await self.tick()
+                await asyncio.sleep(1)
+        except asyncio.CancelledError:
+            pass
+        except Exception as e:
+            logging.error(f"Neurosphere tick loop error: {e}")
+
+    async def stop_ticking(self):
+        if self._tick_task:
+            self._tick_task.cancel()
+            with contextlib.suppress(asyncio.CancelledError):
+                await self._tick_task
+            self._tick_task = None
+
+    async def tick(self) -> None:
         self._time += 1
-        # TODO Итерация цикла выполнения действий
-        # TODO Итерация цикла получения новых действий
+        for character_id in self._characters:
+            character = self._characters[character_id]
+            self._update_actions(character)
+            self._update_possible_actions(character_id)
+
+        for character_id in self._characters:
+            character = self._characters[character_id]
+            if not character.is_busy():
+                controller = self._controllers[character_id]
+                try:
+                    controller.update(self)
+                except Exception as e:
+                    logging.error(f"Neurosphere controller update error: {e}")
+
+        for character_id in self._characters:
+            if character_id not in self._windows:
+                continue
+            try:
+                await self.update_window(character_id)
+            except Exception as e:
+                logging.error(f"Neurosphere window update error: {e}")
 
     # endregion Методы симуляции
 
@@ -138,26 +184,48 @@ class Neurosphere:
             character = self._get_character_by_player_id(player_id)
             self._add_character(character)
             return
+        # генерация игрока
         with open("data/neurosphere/characters/player.json", encoding="utf-8") as file:
             character_data = json.load(file)
         self._generate_character(character_data)
         self._players[player_id] = character_data["id"]
 
+    def remove_player(self, player_id: int) -> None:
+        character = self._get_character_by_player_id(player_id)
+        self._remove_character(character)
+
     # endregion
 
     # region Методы отображения
 
-    def get_player_embed(self, player_id: int) -> disnake.Embed:
+    async def update_window(self, character_id: int) -> None:
+        window = self._windows[character_id]
+        new_embed = self._get_viewer_embed(character_id)
+        old_embed = window.embeds[0]
+        if not embeds_are_equal(new_embed, old_embed):
+            await window.edit(embed=new_embed)
+
+    async def add_window(
+        self, character_id: int, channel: disnake.abc.Messageable
+    ) -> None:
+        embed = self._get_viewer_embed(character_id)
+        window = await channel.send(embed=embed)
+        self._windows[character_id] = window
+
+    async def remove_window(self, character_id: int) -> None:
+        window = self._windows[character_id]
+        del self._windows[character_id]
+        await window.delete()
+
+    def _get_viewer_embed(self, character_id: int) -> disnake.Embed:
         """Генерирует Embed для наблюдателя, основанное на локации, её мире, персонаже и его предметах."""
-        character = self._get_character_by_player_id(player_id)
-        character_id = character.get_id()
 
         world = self._get_world_by_character_id(character_id)
         location = self._get_location_by_character_id(character_id)
         location_description = world.get_location_description(location)
 
         return disnake.Embed(
-            title=f"Персонаж char_{character_id}",
+            title=f"char_{character_id}",
             description=location_description,
         )
 
@@ -165,11 +233,11 @@ class Neurosphere:
 
     # region Методы информации
 
-    def _get_world_id_by_char_id(self, char_id: int) -> int:
+    def _get_world_id_by_character_id(self, char_id: int) -> int:
         return self._get_location_by_character_id(char_id).get_world_id()
 
     def _get_world_by_character_id(self, char_id: int) -> World:
-        return self._worlds[self._get_world_id_by_char_id(char_id)]
+        return self._worlds[self._get_world_id_by_character_id(char_id)]
 
     def _get_location_id_by_character_id(self, char_id: int) -> int:
         return self._characters[char_id].get_location_id()
@@ -180,30 +248,23 @@ class Neurosphere:
     def _get_character_by_player_id(self, player_id: int) -> Character:
         return self._characters[self._players[player_id]]
 
+    def get_character_id_by_player_id(self, player_id: int) -> int:
+        return self._characters[self._players[player_id]].get_id()
+
     def get_controller_by_player_id(self, player_id: int) -> Controller:
         return self._controllers[self._players[player_id]]
 
     # endregion Методы информации
 
-    # region API
+    # region Методы действий
 
-    def _parse_input(self, input_: str) -> list[str]:
-        pass
+    def _update_actions(self, character_id: int) -> None:
+        """Выполняет нужные по времени действия"""
 
-    def handle_input(self, input_: str) -> bool:
-        actions = self._parse_input(input_)
-        if not actions:
-            return False
-        # логика
-        return True
+    def _update_possible_actions(self, character_id: int) -> None:
+        """Обновляет possible_actions в character data"""
 
-    # endregion API
-
-    # region Actions
-
-    # def handle
-
-    # endregion Actions
+    # endregion Методы действий
 
 
 class NeurosphereCog(commands.Cog):
@@ -218,10 +279,16 @@ class NeurosphereCog(commands.Cog):
         guild_ids=GUILD_IDS,
     )
     async def launch_neurosphere(
-        self, inter: disnake.ApplicationCommandInteraction
+        self,
+        inter: disnake.ApplicationCommandInteraction,
+        name: str = "neurosphere0",
     ) -> None:
+        if self.neurosphere:
+            await inter.response.send_message("Нейросфера уже запущена", ephemeral=True)
+            return
         await inter.response.defer()
-        self.neurosphere = Neurosphere()
+        self.neurosphere = Neurosphere(name)
+        await self.neurosphere.start_ticking()
         await inter.followup.send("Нейросфера запущена")
 
     @commands.slash_command(
@@ -236,14 +303,31 @@ class NeurosphereCog(commands.Cog):
         if self.neurosphere is None:
             await inter.response.send_message("Нейросфера не запущена.", ephemeral=True)
             return
-        await inter.response.send_message("Загрузка...", delete_after=1)
+        await inter.response.send_message("Загрузка...", ephemeral=True, delete_after=1)
         neurosphere = self.neurosphere
         player_id = inter.author.id
         neurosphere.add_player(player_id)
-        embed = neurosphere.get_player_embed(player_id)
-        await inter.channel.send(embed=embed)
+        character_id = neurosphere.get_character_id_by_player_id(player_id)
+        await neurosphere.add_window(character_id, inter.channel)
 
-        # TODO сделать контроллер
+    @commands.slash_command(
+        name="leave",
+        description="Выйти из Нейросферы",
+        guild_ids=GUILD_IDS,
+    )
+    async def remove_player(
+        self,
+        inter: disnake.ApplicationCommandInteraction,
+    ) -> None:
+        if self.neurosphere is None:
+            await inter.response.send_message("Нейросфера не запущена.", ephemeral=True)
+            return
+        await inter.response.send_message("Загрузка...", ephemeral=True, delete_after=1)
+        neurosphere = self.neurosphere
+        player_id = inter.author.id
+        neurosphere.remove_player(player_id)
+        character_id = neurosphere.get_character_id_by_player_id(player_id)
+        await neurosphere.remove_window(character_id)
 
     @commands.Cog.listener()
     async def on_message(self, message: disnake.Message):
@@ -251,10 +335,7 @@ class NeurosphereCog(commands.Cog):
             return
         if message.author.bot:
             return
-        game_channel_id = self.game_channels[message.author.id]
-        if message.channel.id != game_channel_id:
-            return
-        self.neurosphere.handle_input()
+        # TODO Обработку для PlayerController
 
 
 def setup(bot):

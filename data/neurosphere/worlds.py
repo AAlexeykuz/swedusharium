@@ -624,6 +624,7 @@ polar	tundra	tundra	tundra	taiga	taiga	plains	steppe	steppe	steppe	steppe	steppe
             return "mountain"
 
         # expecting values from -100 to 100
+        # magic numbers warning (0-20 - horizontal, 0-10 - vertical in temperature-precipitation table)
         horizontal_index = int((temperature + 100) // 10)
         if horizontal_index > 19:
             horizontal_index = 19
@@ -951,7 +952,7 @@ polar	tundra	tundra	tundra	taiga	taiga	plains	steppe	steppe	steppe	steppe	steppe
         output += f"Biome: {biome_name}\n"
         lat, lon = self._point_map[location.get_data("id")]
         output += (
-            f"Latitude: {np.rad2deg(lat):.3f}, longitude: {np.rad2deg(lon - np.pi):.3f}\n"
+            f"Latitude: {np.rad2deg(lat):.2f}, longitude: {np.rad2deg(lon - np.pi):.2f}\n"
         )
         return output
 
