@@ -30,9 +30,9 @@ class Neurosphere:
         self.characters: dict[int, Character] = {}
         self.items: dict[int, Item] = {}
 
-        self._players: dict[int, int] = {}  # user id -> character id
-        self._controllers: dict[int, Controller] = {}  # character id -> controller
-        self._windows: dict[int, disnake.Message] = {}  # character id -> message
+        self.players: dict[int, int] = {}  # user id -> character id
+        self.controllers: dict[int, Controller] = {}  # character id -> controller
+        self.windows: dict[int, disnake.Message] = {}  # character id -> message
 
         self._time: int = 0
         self._tick_time: float = 1
@@ -76,14 +76,14 @@ class Neurosphere:
             self._update_actions(character)
             if not character.is_busy():
                 try:
-                    controller = self._controllers[character_id]
+                    controller = self.controllers[character_id]
                     self._update_commands(character)
                     controller.update(self)
                 except Exception as e:
                     logging.error(f"Neurosphere controller update error: {e}")
 
         for character_id in self.characters:
-            if character_id not in self._windows:
+            if character_id not in self.windows:
                 continue
             try:
                 await self.update_window(character_id)
@@ -136,7 +136,7 @@ class Neurosphere:
                     character_data["id"],
                     character_data["controller"],
                 )
-                if type(self._controllers[character_data["id"]]) is PlayerController:
+                if type(self.controllers[character_data["id"]]) is PlayerController:
                     character.data["active"] = False
             else:
                 not_generated_characters.append(character_data)
@@ -150,7 +150,7 @@ class Neurosphere:
             self.locations[item_data["id"]] = item
 
     def _read_players(self, players: dict[str, int]) -> None:
-        self._players = {int(k): v for k, v in players.items()}
+        self.players = {int(k): v for k, v in players.items()}
 
     def write_data(self, name: str) -> None:
         """Сохраняет Нейросферу как json в data/neurosphere/neurospheres/{name}.json
@@ -158,14 +158,22 @@ class Neurosphere:
         Args:
             name (str): Название json файла (без .json)
         """
+        active_player_characters = []
+        for character_id, character in self.characters.items():
+            controller = self.controllers[character_id]
+            if type(controller) is PlayerController:
+                self._remove_character(character)
+                active_player_characters.append(character)
         data = {
             "worlds": [world.to_dict() for world in self.worlds.values()],
             "locations": [location.to_dict() for location in self.locations.values()],
             "characters": [character.to_dict() for character in self.characters.values()],
             "items": [item.to_dict() for item in self.items.values()],
-            "players": self._players,
+            "players": self.players,
             "time": self._time,
         }
+        for character in active_player_characters:
+            self._add_character(character)
 
         # def custom_serializer(obj):
         #     if isinstance(obj, np.integer):
@@ -208,7 +216,7 @@ class Neurosphere:
     def _add_controller(self, character_id: int, controller_data) -> None:
         controller_class = CONTROLLER_TYPES[controller_data["type"]]
         controller = controller_class(controller_data)
-        self._controllers[character_id] = controller
+        self.controllers[character_id] = controller
 
     def _add_character(self, character: Character) -> None:
         """Включает персонажа и добавляет его в локацию"""
@@ -225,15 +233,16 @@ class Neurosphere:
         character.set_active(False)
 
     def add_player(self, player_id: int) -> None:
-        if player_id in self._players:
+        if player_id in self.players:
             character = self.get_character_by_player_id(player_id)
-            self._add_character(character)
+            if not character.is_active():
+                self._add_character(character)
             return
         # генерация игрока
         with open("data/neurosphere/characters/player.json", encoding="utf-8") as file:
             character_data = json.load(file)
         self._generate_character(character_data)
-        self._players[player_id] = character_data["id"]
+        self.players[player_id] = character_data["id"]
 
     def remove_player(self, player_id: int) -> None:
         character = self.get_character_by_player_id(player_id)
@@ -244,7 +253,7 @@ class Neurosphere:
     # region Методы отображения
 
     async def update_window(self, character_id: int) -> None:
-        window = self._windows[character_id]
+        window = self.windows[character_id]
         new_embed = self._get_viewer_embed(character_id)
         old_embed = window.embeds[0]
         if not embeds_are_equal(new_embed, old_embed):
@@ -255,11 +264,11 @@ class Neurosphere:
     ) -> None:
         embed = self._get_viewer_embed(character_id)
         window = await channel.send(embed=embed)
-        self._windows[character_id] = window
+        self.windows[character_id] = window
 
     async def remove_window(self, character_id: int) -> None:
-        window = self._windows[character_id]
-        del self._windows[character_id]
+        window = self.windows[character_id]
+        del self.windows[character_id]
         await window.delete()
 
     def _get_viewer_embed(self, character_id: int) -> disnake.Embed:
@@ -353,6 +362,9 @@ class Neurosphere:
 
     # region Методы информации
 
+    def is_player(self, player_id) -> bool:
+        return player_id in self.players
+
     def get_world_id_by_character_id(self, char_id: int) -> int:
         return self.get_location_by_character_id(char_id).get_world_id()
 
@@ -366,13 +378,13 @@ class Neurosphere:
         return self.locations[self.get_location_id_by_character_id(char_id)]
 
     def get_character_by_player_id(self, player_id: int) -> Character:
-        return self.characters[self._players[player_id]]
+        return self.characters[self.players[player_id]]
 
     def get_character_id_by_player_id(self, player_id: int) -> int:
-        return self.characters[self._players[player_id]].get_id()
+        return self.characters[self.players[player_id]].get_id()
 
     def get_controller_by_player_id(self, player_id: int) -> Controller:
-        return self._controllers[self._players[player_id]]
+        return self.controllers[self.players[player_id]]
 
     # endregion Методы информации
 
@@ -448,11 +460,13 @@ class NeurosphereCog(commands.Cog):
             await inter.response.send_message("Нейросфера не запущена.", ephemeral=True)
             return
         await inter.response.send_message("Загрузка...", ephemeral=True, delete_after=1)
-        neurosphere = self.neurosphere
+        ns = self.neurosphere
         player_id = inter.author.id
-        neurosphere.add_player(player_id)
-        character_id = neurosphere.get_character_id_by_player_id(player_id)
-        await neurosphere.add_window(character_id, inter.channel)
+        ns.add_player(player_id)
+        character_id = ns.get_character_id_by_player_id(player_id)
+        if character_id in ns.windows:
+            await ns.windows[character_id].delete()
+        await ns.add_window(character_id, inter.channel)
 
     @commands.slash_command(
         name="leave",
