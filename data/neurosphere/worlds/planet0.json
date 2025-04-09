@@ -58,6 +58,7 @@
     "water_level": null,
     "mountain_height": null
   },
+  "points": [],
   "maps": {
     "tectonic_map": [],
     "height_map": [],

@@ -3,11 +3,10 @@
   "active": false,
   "location_id": null,
   "controller": {
-    "type": "player",
-    "player_id": null
+    "type": "player"
   },
   "actions": [],
-  "possible_actions": [],
+  "commands": [],
   "generation": {
     "world_id": 0,
     "coords": [0, 1.57]

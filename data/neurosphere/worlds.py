@@ -2,10 +2,15 @@ import colorsys
 import logging
 import random
 import time
+from typing import TYPE_CHECKING
 
 import noise
 import numpy as np
 from sklearn.neighbors import BallTree
+
+if TYPE_CHECKING:
+    from cogwheels.neurosphere import Neurosphere
+
 
 from data.neurosphere.objects import Character, Item, Location, World, new_id
 
@@ -34,7 +39,7 @@ class Planet(World):
     def __init__(self, data):
         super().__init__(data)
 
-        self._points: np.typing.NDArray = None
+        self._points: np.typing.NDArray[np.float64] = None
         self._tree: BallTree = None
         self._radius: float = self.data["generation"]["radius"]
 
@@ -44,9 +49,9 @@ class Planet(World):
         self._precipitation_map: dict[tuple[float, float], float] = {}
         self._biome_map: dict[tuple[float, float], str] = {}
         self._location_map: dict[tuple[float, float], int] = {}
-        self._point_map: dict[int, tuple[float, float]] = {}
+        self._point_map: dict[int, tuple[float, float]] = {}  # location_id -> point_key
 
-        self._read_maps()
+        self._read_data()
 
         _biome_string: str = """polar	tundra	tundra	tundra	taiga	taiga	taiga	temperate_rainforest	temperate_rainforest	temperate_rainforest	temperate_rainforest	temperate_rainforest	temperate_rainforest	swamp	swamp	swamp	swamp	tropical_rainforest	tropical_rainforest	tropical_rainforest
 polar	tundra	tundra	tundra	taiga	taiga	taiga	temperate_rainforest	temperate_rainforest	temperate_rainforest	temperate_rainforest	temperate_rainforest	swamp	swamp	swamp	swamp	tropical_rainforest	tropical_rainforest	tropical_rainforest	tropical_rainforest
@@ -61,9 +66,14 @@ polar	tundra	tundra	tundra	taiga	taiga	plains	steppe	steppe	steppe	steppe	steppe
 """
         self._biome_table: list[list[str]] = self._table(_biome_string)[::-1]
 
+        self._walking_distance = 1.1 / self._radius
+        self._walking_speed = 0.1 / self._radius
+
         # debug
         self._draw_tectonics: bool = False
         self._borders: list[tuple[float, float]] = []
+
+    # region Методы информации
 
     def statistics(self) -> None:
         ground_temperatures = []
@@ -82,7 +92,11 @@ polar	tundra	tundra	tundra	taiga	taiga	plains	steppe	steppe	steppe	steppe	steppe
             output[(lat, lon)] = value
         return output
 
-    def _read_maps(self) -> None:
+    def _read_data(self) -> None:
+        self._points = np.array(self.data["points"])
+        if self._points.size:
+            self._tree = BallTree(self._points, metric="haversine")
+
         self._tectonic_map = self._read_map("tectonic_map")
         self._height_map = self._read_map("height_map")
         self._heat_map = self._read_map("heat_map")
@@ -93,12 +107,12 @@ polar	tundra	tundra	tundra	taiga	taiga	plains	steppe	steppe	steppe	steppe	steppe
 
     def _write_map(self, map_: dict[tuple[float, float]], name: str) -> None:
         json_map = [
-            {"lat": point_key[0], "lon": point_key[1], "value": value}
-            for point_key, value in map_.items()
+            [point_key[0], point_key[1], value] for point_key, value in map_.items()
         ]
         self.data["maps"][name] = json_map
 
-    def _write_maps(self) -> None:
+    def _write_data(self) -> None:
+        self.data["points"] = self._points.tolist()
         self._write_map(self._tectonic_map, "tectonic_map")
         self._write_map(self._height_map, "height_map")
         self._write_map(self._heat_map, "heat_map")
@@ -106,9 +120,15 @@ polar	tundra	tundra	tundra	taiga	taiga	plains	steppe	steppe	steppe	steppe	steppe
         self._write_map(self._biome_map, "biome_map")
         self._write_map(self._location_map, "location_map")
 
+    def to_dict(self):
+        self._write_data()
+        return super().to_dict()
+
     @staticmethod
     def _table(biome_string) -> list[list[str]]:
         return [line.split("\t") for line in biome_string.split("\n") if line]
+
+    # endregion Методы информации
 
     # region Методы генерации
 
@@ -118,7 +138,7 @@ polar	tundra	tundra	tundra	taiga	taiga	plains	steppe	steppe	steppe	steppe	steppe
         # устанавливаем сид
         seed = self.data["generation"]["seed"]
         if seed is None:
-            seed = random.randint(0, 10000)
+            seed = random.randint(0, 100000)
             self.data["generation"]["seed"] = seed
         random.seed(seed)
         logging.info(f"Seed: {seed}")
@@ -154,7 +174,6 @@ polar	tundra	tundra	tundra	taiga	taiga	plains	steppe	steppe	steppe	steppe	steppe
                 "biome": self._biome_map[point_key],
                 "references": {
                     "structures": [],
-                    "items": [],
                     "characters": [],
                     "life": [],
                 },
@@ -235,7 +254,7 @@ polar	tundra	tundra	tundra	taiga	taiga	plains	steppe	steppe	steppe	steppe	steppe
             if distance_delta < tectonics_data["small_tectonics_delta"]:
                 small_plate_generation_points.append(point)
             else:
-                self._tectonic_map[point_key] = indices[0]
+                self._tectonic_map[point_key] = int(indices[0])
 
         return big_tectonics_tree, small_plate_generation_points
 
@@ -269,7 +288,7 @@ polar	tundra	tundra	tundra	taiga	taiga	plains	steppe	steppe	steppe	steppe	steppe
                 index = big_tectonics_tree.query(query_point, k=1, return_distance=False)[
                     0
                 ][0]
-            self._tectonic_map[point_key] = index
+            self._tectonic_map[point_key] = int(index)
 
     def _generate_height_map(self):
         start_time = time.time()
@@ -913,8 +932,8 @@ polar	tundra	tundra	tundra	taiga	taiga	plains	steppe	steppe	steppe	steppe	steppe
 
     @staticmethod
     def _get_direction(point1: tuple[float, float], point2: tuple[float, float]):
-        lat1, lon1, lat2, lon2 = point1, point2
-        lat1, lon1, lat2, lon2 = map(np.radians, [lat1, lon1, lat2, lon2])
+        """Возвращает угол в радианах"""
+        lat1, lon1, lat2, lon2 = *point1, *point2
         delta_lon = lon2 - lon1
 
         return np.atan2(
@@ -923,7 +942,7 @@ polar	tundra	tundra	tundra	taiga	taiga	plains	steppe	steppe	steppe	steppe	steppe
         )
 
     @staticmethod
-    def direction_to_compass(theta: float) -> str:
+    def _direction_to_compass(theta: float) -> str:
         directions = ["N", "NE", "E", "SE", "S", "SW", "W", "NW"]
         index = round(((theta + np.pi) / (2 * np.pi)) * 8) % 8
         return directions[index]
@@ -932,29 +951,59 @@ polar	tundra	tundra	tundra	taiga	taiga	plains	steppe	steppe	steppe	steppe	steppe
 
     # region Методы нейросферы
 
-    def find_accesible_location_ids(
+    def _find_accessible_location_ids(
         self, location_id: int, distance: float
-    ) -> tuple[int, ...]:
+    ) -> list[int]:
         point_key = self._point_map[location_id]
-        accessible_point_keys = self._find_nearest_points_by_distance(
+        accessible_points = self._find_nearest_points_by_distance(
             point_key[0], point_key[1], distance
         )
-        return tuple(
-            [self._location_map[point_key] for point_key in accessible_point_keys]
-        )
+        return [self._location_map[tuple(point.tolist())] for point in accessible_points]
 
-    def get_accessible_location_description(self, location: Location) -> str:
-        pass
+    def _get_accessible_location_description(
+        self,
+        location: Location,
+        accessible_location: Location,
+        location_number: int,
+        neurosphere: "Neurosphere",  # noqa Может и не использоваться
+    ) -> str:
+        point1 = self._point_map[location.get_id()]
+        point2 = self._point_map[accessible_location.get_id()]
+        direction = self._get_direction(point1, point2)
+        compass = self._direction_to_compass(direction)
+        biome_name = BIOME_NAMES[accessible_location.get_data("biome")]
+        return f"Loc_{location_number}: {biome_name}, {compass}."
 
     def get_location_description(self, location: Location) -> str:
         output = ""
         biome_name = BIOME_NAMES[location.get_data("biome")]
         output += f"Biome: {biome_name}\n"
-        lat, lon = self._point_map[location.get_data("id")]
+        lat, lon = self._point_map[location.get_id()]
         output += (
             f"Latitude: {np.rad2deg(lat):.2f}, longitude: {np.rad2deg(lon - np.pi):.2f}\n"
         )
         return output
+
+    def get_accessible_location_descriptions(
+        self, location: Location, neurosphere: "Neurosphere"
+    ) -> dict[int, str]:
+        accessible_location_ids = self._find_accessible_location_ids(
+            location.get_id(),
+            self._walking_distance,
+        )
+        accessible_location_ids.sort()
+        accessible_locations = [
+            neurosphere.locations[location_id] for location_id in accessible_location_ids
+        ]
+        return {
+            accessible_location.get_id(): self._get_accessible_location_description(
+                location,
+                accessible_location,
+                location_number,
+                neurosphere,
+            )
+            for location_number, accessible_location in enumerate(accessible_locations)
+        }
 
     # endergion Методы нейросферы
 

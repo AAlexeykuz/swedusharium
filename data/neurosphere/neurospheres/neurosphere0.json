@@ -60,6 +60,7 @@
         "water_level": null,
         "mountain_height": null
       },
+      "points": [],
       "maps": {
         "tectonic_map": [],
         "height_map": [],
@@ -72,5 +73,7 @@
   ],
   "locations": [],
   "characters": [],
-  "players": []
+  "items": [],
+  "players": {},
+  "time": 0
 }

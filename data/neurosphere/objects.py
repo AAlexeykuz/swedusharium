@@ -1,8 +1,12 @@
 import colorsys
 import logging
 import random
+from typing import TYPE_CHECKING
 
 import disnake
+
+if TYPE_CHECKING:
+    from cogwheels.neurosphere import Neurosphere
 
 
 class Essence:
@@ -16,6 +20,9 @@ class Essence:
             data = data[name]
         return data
 
+    def to_dict(self) -> dict:
+        return self.data
+
     def get_id(self) -> int:
         return self.data["id"]
 
@@ -26,36 +33,36 @@ class Essence:
 class Location(Essence):
     def __init__(self, data: dict):
         super().__init__(data)
-        self.characters: list[int] = self.data["references"]["characters"]
 
     def get_world_id(self):
         return self.data["world_id"]
 
     def add_character_id(self, char_id: int) -> None:
-        if char_id in self.characters:
+        characters: list[int] = self.data["references"]["characters"]
+        if char_id in characters:
             logging.error("Два одинаковых персонажа на одной локации")
-        self.characters.append(char_id)
+        characters.append(char_id)
 
     def remove_character_id(self, char_id: int) -> None:
-        if char_id not in self.characters:
-            logging.error("Попытка удалить пероснажа из локации, где его нет")
-        self.characters.remove(char_id)
+        characters: list[int] = self.data["references"]["characters"]
+        if char_id not in characters:
+            logging.error("Попытка удалить персонажа из локации, где его нет")
+        characters.remove(char_id)
+
+    def get_structure_descriptions(self, neurosphere: "Neurosphere") -> dict[int, str]:  # noqa
+        """Возвращает словарь structure_id -> описание"""
+        return {}
+        # TODO Реализовать
+
+    def get_character_descriptions(self, neurosphere: "Neurosphere") -> dict[int, str]:  # noqa
+        """Возвращает словарь character_id -> описание"""
+        return {}
+        # TODO Реализовать
 
 
 class Item(Essence):
     def __init__(self, data: dict):
         super().__init__(data)
-
-
-class Action(Essence):
-    def __init__(self, data: dict):
-        super().__init__(data)
-
-    def get_name(self):
-        return self.data["name"]
-
-    def get_arguments(self):
-        return self.data["arguments"]
 
 
 class Character(Essence):
@@ -65,13 +72,10 @@ class Character(Essence):
     def get_location_id(self) -> int:
         return self.data["location_id"]
 
-    def get_state(self) -> int:
-        return self.data["state"]
-
     def set_active(self, active: bool) -> None:
         self.data["active"] = active
 
-    def get_active(self) -> bool:
+    def is_active(self) -> bool:
         return self.data["active"]
 
     def is_busy(self) -> bool:
@@ -83,18 +87,28 @@ class Character(Essence):
     def set_actions(self, actions: list[dict[str]]) -> None:
         self.data["actions"] = actions
 
-    def get_possible_actions(self) -> list[dict[str]]:
-        return self.data["possible_actions"]
+    def get_commands(self) -> list[dict[str]]:
+        return self.data["commands"]
 
-    def set_possible_actions(self, possible_actions: list[dict[str]]) -> None:
-        self.data["possible_actions"] = possible_actions
+    def set_commands(self, possible_actions: list[dict[str]]) -> None:
+        self.data["commands"] = possible_actions
+
+    def get_description(self) -> str:
+        """Возвращает описание персонажа, его харатеристик и т.п."""
+        return ""
+        # TODO Реализовать
+
+    def get_item_descriptions(self, neurosphere: "Neurosphere") -> dict[int, str]:  # noqa
+        """Возвращает словарь item_id -> описание"""
+        return {}
+        # TODO Реализовать
 
 
 class Controller(Essence):
     def __init__(self, data):
         super().__init__(data)
 
-    def update(self, neurosphere) -> None:  # noqa
+    def update(self, neurosphere: "Neurosphere") -> None:  # noqa
         """Вызывается, когда действия персонажа заканчиваются.
         Обновляет возможные действия и побуждает управляющего дать новые действия."""
         logging.error(f"Метод act в {type(self)} не реализован")
@@ -123,6 +137,9 @@ class PlayerController(Controller):
             await self.game_message.delete()
         self.game_message = message
 
+    def update(self, neurosphere: "Neurosphere"):
+        pass
+
 
 class World(Essence):
     def __init__(self, data):
@@ -150,6 +167,14 @@ class World(Essence):
         """Возвращает строку с описанием локации для данного мира."""
         logging.error(f"Метод generate_locations в {type(self)} не реализован")
 
+    def get_accessible_location_descriptions(
+        self,
+        location: Location,  # noqa
+        neurosphere: "Neurosphere",  # noqa
+    ) -> dict[int, str]:
+        """Возвращает словарь: id доступной локации -> описание локации"""
+        logging.error(f"Метод generate_locations в {type(self)} не реализован")
+
 
 def generate_pleasant_color() -> tuple[int, int, int]:
     hue = random.uniform(0, 360)
@@ -166,15 +191,15 @@ def new_id(holder: dict) -> int:
 
 
 def embeds_are_equal(embed1: disnake.Embed, embed2: disnake.Embed) -> bool:
-    embed1 = embed1.to_dict()
-    embed2 = embed2.to_dict()
-    for key in embed1:
+    embed1: dict = embed1.to_dict()
+    embed2: dict = embed2.to_dict()
+    for key in embed1.copy():
         value = embed1[key]
         if type(value) is str:
             embed1[key] = value.strip()
         else:
             del embed1[key]
-    for key in embed2:
+    for key in embed2.copy():
         value = embed2[key]
         if type(value) is str:
             embed2[key] = value.strip()

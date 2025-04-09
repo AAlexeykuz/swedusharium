@@ -80,9 +80,7 @@ def plot_sphere_points(points, colors):
         scatter.set_facecolor(new_color_array)
 
         # Update the title with the current count of visible points.
-        ax.set_title(
-            f"Visible Neurosphere Points ({len(x_vis)} Points)", fontsize=14
-        )
+        ax.set_title(f"Visible Neurosphere Points ({len(x_vis)} Points)", fontsize=14)
         fig.canvas.draw_idle()
 
     # Initially compute visible points.
@@ -138,7 +136,7 @@ if __name__ == "__main__":
     logging.info("Приложение запущено")
 
     neurosphere = Neurosphere("neurosphere/neurospheres/neurosphere0.json")
-    sphere = neurosphere._worlds[0]
+    sphere = neurosphere.worlds[0]
     sphere.statistics()
     colors = sphere.generate_colors_by_biomes()
     fig, ax = plot_sphere_points(sphere._points, colors)
