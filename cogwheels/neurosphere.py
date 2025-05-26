@@ -2,6 +2,7 @@ import asyncio
 import contextlib
 import json
 import logging
+import traceback
 
 import disnake
 from disnake.ext import commands
@@ -45,17 +46,17 @@ class Neurosphere:
 
     # region Методы симуляции
 
-    async def start_ticking(self):
+    async def start_ticking(self) -> None:
         self._tick_task = asyncio.create_task(self._tick_loop())
 
-    async def stop_ticking(self):
+    async def stop_ticking(self) -> None:
         if self._tick_task:
             self._tick_task.cancel()
             with contextlib.suppress(asyncio.CancelledError):
                 await self._tick_task
             self._tick_task = None
 
-    async def _tick_loop(self):
+    async def _tick_loop(self) -> None:
         try:
             while True:
                 await self.tick()
@@ -75,12 +76,14 @@ class Neurosphere:
         for character_id, character in characters.items():
             self._update_actions(character)
             if not character.is_busy():
+                controller = self.controllers[character_id]
+                self._update_commands(character)
                 try:
-                    controller = self.controllers[character_id]
-                    self._update_commands(character)
                     controller.update(self)
                 except Exception as e:
-                    logging.error(f"Neurosphere controller update error: {e}")
+                    logging.error(
+                        f"Neurosphere controller update error: {e}\n{traceback.format_exc()}"
+                    )
 
         for character_id in self.characters:
             if character_id not in self.windows:
@@ -88,7 +91,9 @@ class Neurosphere:
             try:
                 await self.update_window(character_id)
             except Exception as e:
-                logging.error(f"Neurosphere window update error: {e}")
+                logging.error(
+                    f"Neurosphere window update error: {e}\n{traceback.format_exc()}"
+                )
 
     # endregion Методы симуляции
 
@@ -282,65 +287,68 @@ class Neurosphere:
             disnake.Embed: Embed, содержащий всю нужную информацию для наблюдения за персонажем
         """
 
+        # Все описания генерируются через класс мира, так как мир - единственный класс,
+        # который может кардинально меняться.
+        # Классы персонажей, предметов, локаций и т.д. не меняются.
+        # Во все методы получения описаний передаётся персонаж и Нейросфера.
+        # Это весь необходимый
+
         world = self.get_world_by_character_id(character_id)
-        location = self.get_location_by_character_id(character_id)
         character = self.characters[character_id]
-        commands = character.get_commands()
 
-        location_description = world.get_location_description(location)
+        character_description = world.get_character_description(character, self)
+        item_descriptions = world.get_item_descriptions(character, self)
+        location_description = world.get_location_description(character, self)
+        character_descriptions = world.get_character_descriptions(character, self)
+        structure_descriptions = world.get_structure_descriptions(character, self)
         accessible_location_descriptions = world.get_accessible_location_descriptions(
-            location, self
+            character, self
         )
-
-        character_description = character.get_description()
-        item_descriptions = character.get_item_descriptions(self)
-
-        character_descriptions = location.get_character_descriptions(self)
-        structure_descriptions = location.get_structure_descriptions(self)
+        commands = character.get_commands()
 
         embed = disnake.Embed(
             description=character_description,
         )
-
         embed.add_field(
             name="Инвентарь",
-            value=self._make_embed_value(item_descriptions, commands, "items"),
+            value=self._join_commands_with_descriptions(
+                item_descriptions, commands, "items"
+            ),
             inline=False,
         )
-
         embed.add_field(
             name="Локация",
             value=location_description,
             inline=False,
         )
-
         embed.add_field(
             name="Персонажи рядом",
-            value=self._make_embed_value(character_descriptions, commands, "characters"),
+            value=self._join_commands_with_descriptions(
+                character_descriptions, commands, "characters"
+            ),
             inline=False,
         )
         embed.add_field(
             name="Структуры рядом",
-            value=self._make_embed_value(structure_descriptions, commands, "structures"),
+            value=self._join_commands_with_descriptions(
+                structure_descriptions, commands, "structures"
+            ),
             inline=False,
         )
-
         embed.add_field(
             name="Куда пойти",
-            value=self._make_embed_value(
+            value=self._join_commands_with_descriptions(
                 accessible_location_descriptions, commands, "locations"
             ),
             inline=False,
         )
-
         embed.set_author(
             name=f"Char_{character_id}",
         )
-
         return embed
 
     @staticmethod
-    def _make_embed_value(
+    def _join_commands_with_descriptions(
         descriptions: dict[int, str], commands: list[dict], category: str
     ) -> str:
         """Собирает описания вместе с командами в одну строку"""
@@ -365,30 +373,42 @@ class Neurosphere:
     def is_player(self, player_id) -> bool:
         return player_id in self.players
 
-    def get_world_id_by_character_id(self, char_id: int) -> int:
-        return self.get_location_by_character_id(char_id).get_world_id()
+    def get_world_id_by_character_id(self, character_id: int) -> int:
+        return self.get_location_by_character_id(character_id).get_world_id()
 
-    def get_world_by_character_id(self, char_id: int) -> World:
-        return self.worlds[self.get_world_id_by_character_id(char_id)]
+    def get_world_id_by_character(self, character: Character) -> int:
+        return self.get_location_by_character(character).get_world_id()
 
-    def get_location_id_by_character_id(self, char_id: int) -> int:
-        return self.characters[char_id].get_location_id()
+    def get_world_by_character_id(self, character_id: int) -> World:
+        return self.worlds[self.get_world_id_by_character_id(character_id)]
 
-    def get_location_by_character_id(self, char_id: int) -> Location:
-        return self.locations[self.get_location_id_by_character_id(char_id)]
+    def get_world_by_character(self, character: Character) -> World:
+        return self.get_world_by_character_id(character.get_id())
+
+    def get_location_id_by_character_id(self, character_id: int) -> int:
+        return self.characters[character_id].get_location_id()
+
+    def get_location_by_character_id(self, character_id: int) -> Location:
+        return self.locations[self.get_location_id_by_character_id(character_id)]
+
+    def get_location_by_character(self, character: Character) -> Location:
+        return self.locations[character.get_location_id()]
 
     def get_character_by_player_id(self, player_id: int) -> Character:
         return self.characters[self.players[player_id]]
 
     def get_character_id_by_player_id(self, player_id: int) -> int:
-        return self.characters[self.players[player_id]].get_id()
+        return self.get_character_by_player_id(player_id).get_id()
 
     def get_controller_by_player_id(self, player_id: int) -> Controller:
-        return self.controllers[self.players[player_id]]
+        return self.controllers[self.get_character_id_by_player_id(player_id)]
 
     # endregion Методы информации
 
     # region Методы действий
+
+    def _execute(self, action: dict[str]) -> None:
+        pass  # TODO Реализовать
 
     def _update_actions(self, character: Character) -> None:
         """Выполняет нужные по времени действия"""
@@ -396,7 +416,9 @@ class Neurosphere:
 
     def _update_commands(self, character: Character) -> None:
         """Обновляет commands в character data"""
-        # TODO Реализовать
+        world = self.get_world_by_character(character)
+        world.update_item_commands(character, self)
+        world.update_character_commands(character, self)
 
     # endregion Методы действий
 

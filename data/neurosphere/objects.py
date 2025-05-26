@@ -49,16 +49,6 @@ class Location(Essence):
             logging.error("Попытка удалить персонажа из локации, где его нет")
         characters.remove(char_id)
 
-    def get_structure_descriptions(self, neurosphere: "Neurosphere") -> dict[int, str]:  # noqa
-        """Возвращает словарь structure_id -> описание"""
-        return {}
-        # TODO Реализовать
-
-    def get_character_descriptions(self, neurosphere: "Neurosphere") -> dict[int, str]:  # noqa
-        """Возвращает словарь character_id -> описание"""
-        return {}
-        # TODO Реализовать
-
 
 class Item(Essence):
     def __init__(self, data: dict):
@@ -92,16 +82,6 @@ class Character(Essence):
 
     def set_commands(self, possible_actions: list[dict[str]]) -> None:
         self.data["commands"] = possible_actions
-
-    def get_description(self) -> str:
-        """Возвращает описание персонажа, его харатеристик и т.п."""
-        return ""
-        # TODO Реализовать
-
-    def get_item_descriptions(self, neurosphere: "Neurosphere") -> dict[int, str]:  # noqa
-        """Возвращает словарь item_id -> описание"""
-        return {}
-        # TODO Реализовать
 
 
 class Controller(Essence):
@@ -163,17 +143,77 @@ class World(Essence):
         Генерирует его предметы и добавляет их к item_holder."""
         logging.error(f"Метод generate_character в {type(self)} не реализован")
 
-    def get_location_description(self, location: Location) -> str:  # noqa
+    # region Методы действий
+
+    def update_item_commands(self, character: Character, ns: "Neurosphere") -> None:  # noqa
+        """Ставит персонажу команды для взаимодействия с предметами в инвентаре"""
+        logging.error(f"Метод update_item_commands в {type(self)} не реализован")
+
+    def update_character_commands(self, character: Character, ns: "Neurosphere") -> None:  # noqa
+        """Ставит персонажу команды для взаимодействия с другими персонажами"""
+        logging.error(f"Метод update_character_commands в {type(self)} не реализован")
+
+    def update_structure_commands(self, character: Character, ns: "Neurosphere") -> None:  # noqa
+        """Ставит персонажу команды для взаимодействия со структурами"""
+        logging.error(f"Метод update_structure_commands в {type(self)} не реализован")
+
+    def update_accessible_location_commands(
+        self,
+        character: Character,  # noqa
+        ns: "Neurosphere",  # noqa
+    ) -> None:
+        """Ставит персонажу команды для перехода к другим локациям"""
+        logging.error(
+            f"Метод update_accessible_location_commands в {type(self)} не реализован"
+        )
+
+    # endregion Методы действий
+
+    # region Методы отображения
+
+    def get_character_description(self, character: Character, ns: "Neurosphere") -> str:  # noqa
+        """Возвращает описание персонажа, его харатеристик и т.п."""
+        logging.error(f"Метод get_character_description в {type(self)} не реализован")
+
+    def get_item_descriptions(
+        self,
+        character: Character,  # noqa
+        ns: "Neurosphere",  # noqa
+    ) -> dict[int, str]:
+        """Возвращает словарь item_id -> описание"""
+        logging.error(f"Метод get_item_descriptions в {type(self)} не реализован")
+
+    def get_location_description(self, character: Character, ns: "Neurosphere") -> str:  # noqa
         """Возвращает строку с описанием локации для данного мира."""
         logging.error(f"Метод generate_locations в {type(self)} не реализован")
 
+    def get_character_descriptions(
+        self,
+        character: "Character",  # noqa
+        ns: "Neurosphere",  # noqa
+    ) -> dict[int, str]:
+        """Возвращает словарь character_id -> описание"""
+        logging.error(f"Метод get_character_descriptions в {type(self)} не реализован")
+
+    def get_structure_descriptions(
+        self,
+        character: "Character",  # noqa
+        ns: "Neurosphere",  # noqa
+    ) -> dict[int, str]:
+        """Возвращает словарь structure_id -> описание"""
+        logging.error(f"Метод structure_descriptions в {type(self)} не реализован")
+
     def get_accessible_location_descriptions(
         self,
-        location: Location,  # noqa
-        neurosphere: "Neurosphere",  # noqa
+        character: Character,  # noqa
+        ns: "Neurosphere",  # noqa
     ) -> dict[int, str]:
-        """Возвращает словарь: id доступной локации -> описание локации"""
-        logging.error(f"Метод generate_locations в {type(self)} не реализован")
+        """Возвращает словарь: id доступной локации -> описание локации."""
+        logging.error(
+            f"Метод get_accessible_location_descriptions в {type(self)} не реализован"
+        )
+
+    # endregion Методы отображения
 
 
 def generate_pleasant_color() -> tuple[int, int, int]:

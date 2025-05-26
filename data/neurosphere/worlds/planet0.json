@@ -1,6 +1,7 @@
 {
   "id": null,
   "type": "planet",
+  "upper_worlds": [],
   "generation": {
     "seed": null,
     "radius": 25,

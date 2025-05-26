@@ -5,7 +5,7 @@ import disnake
 from disnake.ui import Button
 
 # general constants
-GUILD_IDS = [1324774187583410249, 955168680474443777, 1355545257210675384]
+GUILD_IDS = [1324774187583410249, 955168680474443777]
 SWEDUSHARIUM_ID = GUILD_IDS[0]
 # disnake constants
 BLUE = disnake.ButtonStyle.primary
@@ -23,9 +23,7 @@ MESSAGES = {
     },
     "welcome": {
         "content": "https://images-ext-1.discordapp.net/external/2RvhWttulwcpeTPXh33P32VFA523JxWkiEFX0Kwai_4/https/i.gifer.com/origin/3c/3c82e43002a5c632edebf76eadc6499a_w200.webp?animated=true",
-        "components": [
-            Button(emoji="🌟", custom_id="verification_send", style=GREEN)
-        ],
+        "components": [Button(emoji="🌟", custom_id="verification_send", style=GREEN)],
     },
 }
 

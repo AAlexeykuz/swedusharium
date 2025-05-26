@@ -744,7 +744,7 @@ polar	tundra	tundra	tundra	taiga	taiga	plains	steppe	steppe	steppe	steppe	steppe
         self,
         character_data: dict,
         character_holder: dict[int, Character],
-        item_holder: dict[int, Item],
+        _: dict[int, Item],  # item_holder, может и не использоваться
     ) -> None:
         # Вызывать промпты для генерации недостающих описаний ТОЖЕ здесь, а не внутри персонажа
         self._generate_character_data(character_data)
@@ -752,8 +752,6 @@ polar	tundra	tundra	tundra	taiga	taiga	plains	steppe	steppe	steppe	steppe	steppe
         new_id_ = new_id(character_holder)
 
         character_holder[new_id_] = Character(character_data)
-
-        # TODO Проитерировать сгенерированные вещи персонажа и добавить их к item_holder
 
     def _generate_character_data(self, character_data: dict) -> None:
         """Добавляет к character_data всю недостающую информацию."""
@@ -951,6 +949,8 @@ polar	tundra	tundra	tundra	taiga	taiga	plains	steppe	steppe	steppe	steppe	steppe
 
     # region Методы нейросферы
 
+    # region Отображение
+
     def _find_accessible_location_ids(
         self, location_id: int, distance: float
     ) -> list[int]:
@@ -965,7 +965,6 @@ polar	tundra	tundra	tundra	taiga	taiga	plains	steppe	steppe	steppe	steppe	steppe
         location: Location,
         accessible_location: Location,
         location_number: int,
-        neurosphere: "Neurosphere",  # noqa Может и не использоваться
     ) -> str:
         point1 = self._point_map[location.get_id()]
         point2 = self._point_map[accessible_location.get_id()]
@@ -974,8 +973,17 @@ polar	tundra	tundra	tundra	taiga	taiga	plains	steppe	steppe	steppe	steppe	steppe
         biome_name = BIOME_NAMES[accessible_location.get_data("biome")]
         return f"Loc_{location_number}: {biome_name}, {compass}."
 
-    def get_location_description(self, location: Location) -> str:
+    def get_character_description(self, character: Character, ns: "Neurosphere") -> str:
+        return ""
+
+    def get_item_descriptions(
+        self, character: Character, ns: "Neurosphere"
+    ) -> dict[int, str]:
+        return {}
+
+    def get_location_description(self, character: Character, ns: "Neurosphere") -> str:
         output = ""
+        location = ns.get_location_by_character(character)
         biome_name = BIOME_NAMES[location.get_data("biome")]
         output += f"Biome: {biome_name}\n"
         lat, lon = self._point_map[location.get_id()]
@@ -984,26 +992,42 @@ polar	tundra	tundra	tundra	taiga	taiga	plains	steppe	steppe	steppe	steppe	steppe
         )
         return output
 
+    def get_character_descriptions(self, character: Character, ns: "Neurosphere"):
+        location = ns.get_location_by_character(character)
+        return {}
+
+    def get_structure_descriptions(self, character: Character, ns: "Neurosphere"):
+        location = ns.get_location_by_character(character)
+        return {}
+
     def get_accessible_location_descriptions(
-        self, location: Location, neurosphere: "Neurosphere"
+        self,
+        character: Character,
+        ns: "Neurosphere",
     ) -> dict[int, str]:
+        location = ns.get_location_by_character(character)
         accessible_location_ids = self._find_accessible_location_ids(
             location.get_id(),
             self._walking_distance,
         )
         accessible_location_ids.sort()
         accessible_locations = [
-            neurosphere.locations[location_id] for location_id in accessible_location_ids
+            ns.locations[location_id] for location_id in accessible_location_ids
         ]
         return {
             accessible_location.get_id(): self._get_accessible_location_description(
                 location,
                 accessible_location,
                 location_number,
-                neurosphere,
             )
             for location_number, accessible_location in enumerate(accessible_locations)
         }
+
+    # endregion Отображение
+
+    # region Действия
+
+    # endregion Действия
 
     # endergion Методы нейросферы
 

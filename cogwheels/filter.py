@@ -18,7 +18,7 @@ genai.configure(api_key=getenv("GOOGLE_API_KEY"))
 
 GEMINI_MODEL = genai.GenerativeModel("gemini-2.0-flash-exp")
 # GEMINI_MODEL = genai.GenerativeModel("gemini-exp-1206")
-G4F_MODEL = models.deepseek_v3
+G4F_MODEL = models.gemini
 
 
 def parse_transformed_messages(result_str) -> list[str]:  # чатгпт
@@ -123,12 +123,10 @@ Transformation Instructions end.
         start_time = time.time()
         response = self._client.chat.completions.create(
             model=G4F_MODEL,
-            messages=[{"roleee": "system", "content": prompt}],
+            messages=[{"role": "system", "content": prompt}],
             # provider=Provider.ChatGptEs,
         )
-        logging.info(
-            f"{G4F_MODEL.name} generation time: {time.time() - start_time:.2f}s"
-        )
+        logging.info(f"{G4F_MODEL.name} generation time: {time.time() - start_time:.2f}s")
         return response.choices[0].message.content
 
     def get_gemini_response(self, prompt):
@@ -170,9 +168,7 @@ Transformation Instructions end.
                 filtered = self._filter_messages(messages_list)
                 webhooks: list[disnake.Webhook] = [wh for wh, _ in batch]
                 messages_obj: list[disnake.Message] = [msg for _, msg in batch]
-                await self._send_messages(
-                    list(zip(webhooks, messages_obj, filtered))
-                )
+                await self._send_messages(list(zip(webhooks, messages_obj, filtered)))
 
                 # Mark all items in this batch as processed
                 for _ in batch:
@@ -192,20 +188,13 @@ Transformation Instructions end.
         for webhook, message, filtered in messages:
             member = message.author
             username = member.nick if member.nick else member.global_name
-            avatar_url = (
-                member.avatar.url
-                if member.avatar
-                else member.default_avatar.url
-            )
+            avatar_url = member.avatar.url if member.avatar else member.default_avatar.url
             await webhook.send(
                 content=filtered,
                 username=username,
                 avatar_url=avatar_url,
                 components=message.components,
-                files=[
-                    await attachment.to_file()
-                    for attachment in message.attachments
-                ],
+                files=[await attachment.to_file() for attachment in message.attachments],
             )
 
     def _add_context(self, message: str) -> None:
@@ -304,9 +293,7 @@ class FilterCog(commands.Cog):
         prompt: str,
     ):
         if member.bot:
-            await inter.response.send_message(
-                "Filters can't be applied to bots."
-            )
+            await inter.response.send_message("Filters can't be applied to bots.")
             return
         if (
             not inter.author.guild_permissions.administrator
@@ -325,9 +312,7 @@ class FilterCog(commands.Cog):
 
         filter_ = Filter(prompt)
         self.filters[member.id] = filter_
-        await inter.response.send_message(
-            f"Filter has been applied to {member.nick}."
-        )
+        await inter.response.send_message(f"Filter has been applied to {member.nick}.")
 
     @commands.slash_command(
         name="remove-filter",
@@ -356,13 +341,9 @@ class FilterCog(commands.Cog):
 
         if member.id in self.filters:
             del self.filters[member.id]
-        await inter.response.send_message(
-            f"Filter has been removed from {member.nick}."
-        )
+        await inter.response.send_message(f"Filter has been removed from {member.nick}.")
 
-    async def get_webhook(
-        self, channel: disnake.abc.GuildChannel
-    ) -> disnake.Webhook:
+    async def get_webhook(self, channel: disnake.abc.GuildChannel) -> disnake.Webhook:
         if channel.id in self.webhooks_cache:
             return self.webhooks_cache[channel.id]
         webhooks = await channel.webhooks()
@@ -382,11 +363,7 @@ class FilterCog(commands.Cog):
         if not message.content:
             member = message.author
             username = member.nick if member.nick else member.global_name
-            avatar_url = (
-                member.avatar.url
-                if member.avatar
-                else member.default_avatar.url
-            )
+            avatar_url = member.avatar.url if member.avatar else member.default_avatar.url
             asyncio.gather(
                 message.delete(),
                 await webhook.send(
@@ -395,8 +372,7 @@ class FilterCog(commands.Cog):
                     avatar_url=avatar_url,
                     components=message.components,
                     files=[
-                        await attachment.to_file()
-                        for attachment in message.attachments
+                        await attachment.to_file() for attachment in message.attachments
                     ],
                 ),
             )
